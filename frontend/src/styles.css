@@ -1,0 +1,303 @@
+:root {
+  color: #18201c;
+  background: #f6f5ef;
+  font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f6f5ef;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  color: #536057;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 40px;
+  align-items: center;
+  padding: 56px;
+}
+
+.auth-hero h1 {
+  margin: 0 0 18px;
+  font-size: clamp(42px, 7vw, 92px);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.auth-hero p {
+  margin: 0;
+  max-width: 580px;
+  color: #5d675f;
+  font-size: 20px;
+  line-height: 1.7;
+}
+
+.auth-panel,
+.profile-modal {
+  background: #fff;
+  border: 1px solid #dfe3d8;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 18px 50px rgba(29, 46, 34, 0.12);
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.auth-tabs button,
+.side-nav button,
+.logout-btn,
+.modal-actions button,
+.project-list-head button {
+  border: 1px solid #dfe3d8;
+  background: #f8f8f3;
+  color: #263129;
+  border-radius: 6px;
+  min-height: 40px;
+}
+
+.auth-tabs button.active,
+.side-nav button.active,
+.primary-btn {
+  border-color: #183421;
+  background: #183421;
+  color: #fff;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: #465047;
+  font-size: 14px;
+  margin: 14px 0;
+}
+
+input {
+  border: 1px solid #d8ded3;
+  background: #fff;
+  color: #18201c;
+  border-radius: 6px;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.primary-btn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 6px;
+  border: 0;
+}
+
+.form-error {
+  color: #a12f2f;
+  background: #fff0ef;
+  border: 1px solid #f1c5c1;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.form-note {
+  color: #1e6237;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 286px minmax(0, 1fr);
+}
+
+.app-side {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  background: #ffffff;
+  border-right: 1px solid #dde3d8;
+  overflow: auto;
+}
+
+.brand-block {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf0e9;
+}
+
+.brand-block strong {
+  font-size: 20px;
+}
+
+.brand-block span,
+.empty-text,
+.project-row span,
+.gallery-card span {
+  color: #748076;
+  font-size: 12px;
+}
+
+.side-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.side-nav button,
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+}
+
+.project-list {
+  display: grid;
+  gap: 8px;
+}
+
+.project-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #4d594f;
+  font-size: 14px;
+}
+
+.project-list-head button {
+  width: 34px;
+  min-height: 34px;
+  display: grid;
+  place-items: center;
+}
+
+.project-row {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e3e8df;
+  background: #fafbf8;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.project-row.active {
+  border-color: #183421;
+  background: #edf5ee;
+}
+
+.logout-btn {
+  margin-top: auto;
+}
+
+.app-main {
+  min-width: 0;
+  overflow: auto;
+}
+
+.gallery-page {
+  padding: 36px;
+}
+
+.gallery-page h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+}
+
+.gallery-page header p {
+  margin: 0 0 24px;
+  color: #687369;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.gallery-card,
+.gallery-empty {
+  background: #fff;
+  border: 1px solid #dde3d8;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.gallery-card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.gallery-card p {
+  margin: 0 0 16px;
+  color: #536057;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(24, 32, 28, 0.32);
+  padding: 24px;
+  z-index: 30;
+}
+
+.profile-modal {
+  width: min(440px, 100%);
+}
+
+.profile-modal h2 {
+  margin: 0 0 8px;
+}
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@media (max-width: 860px) {
+  .auth-page {
+    grid-template-columns: 1fr;
+    padding: 28px;
+  }
+
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-side {
+    position: relative;
+    height: auto;
+  }
+}
