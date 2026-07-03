@@ -171,6 +171,83 @@
     color: var(--manju-ink);
 }
 
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: clamp(1rem, 8vh, 4.5rem) 1rem 1rem;
+    background: rgba(22, 19, 14, 0.34);
+}
+
+.modal-small {
+    width: min(520px, calc(100vw - 2rem));
+    display: grid;
+    gap: 0.95rem;
+    padding: 1.25rem;
+    border: 3px solid var(--manju-ink);
+    border-radius: 6px;
+    background: var(--manju-paper);
+    box-shadow: 8px 8px 0 var(--manju-ink);
+}
+
+.modal-small h3 {
+    margin: 0;
+    font-size: clamp(1.25rem, 2vw, 1.65rem);
+    line-height: 1.2;
+    font-weight: 900;
+}
+
+.modal-small input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.62rem 0.78rem;
+    border: 3px solid var(--manju-ink);
+    border-radius: 5px;
+    background: #fff;
+    color: var(--manju-ink);
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 800;
+    outline: none;
+}
+
+.modal-small input:focus {
+    border-color: #0b65d8;
+    box-shadow: 0 0 0 3px rgba(11, 101, 216, 0.18);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
+.modal-actions button {
+    min-height: 42px;
+    padding: 0.55rem 1rem;
+    border: 3px solid var(--manju-ink);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--manju-ink);
+    box-shadow: 4px 4px 0 var(--manju-ink);
+    font: inherit;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.modal-actions .btn-primary {
+    background: var(--manju-yellow);
+}
+
+.modal-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+    box-shadow: none;
+}
+
 .ai-manju-top-steps {
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 0.68rem;

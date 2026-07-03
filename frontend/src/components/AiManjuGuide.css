@@ -1,0 +1,163 @@
+.ai-manju-guide {
+  min-height: 100vh;
+  padding: clamp(18px, 4vw, 46px);
+  background: #fff8df;
+  color: #151515;
+}
+
+.ai-manju-guide-hero {
+  border: 3px solid #151515;
+  background: #fffef5;
+  box-shadow: 8px 8px 0 #151515;
+  padding: clamp(18px, 4vw, 36px);
+}
+
+.ai-manju-guide-hero span {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.ai-manju-guide-hero h2 {
+  margin: 8px 0 0;
+  font-size: clamp(32px, 6vw, 64px);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.ai-manju-guide-hero p {
+  max-width: 840px;
+  margin: 16px 0 0;
+  color: rgba(21, 21, 21, 0.72);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.ai-manju-guide-flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.ai-manju-guide-flow a {
+  min-height: 62px;
+  border: 2px solid #151515;
+  background: #ffe66d;
+  color: #151515;
+  box-shadow: 4px 4px 0 #151515;
+  padding: 10px;
+  text-decoration: none;
+}
+
+.ai-manju-guide-flow strong,
+.ai-manju-guide-flow span {
+  display: block;
+}
+
+.ai-manju-guide-flow strong {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.ai-manju-guide-flow span {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.ai-manju-guide-sections {
+  display: grid;
+  gap: 22px;
+  margin-top: 28px;
+}
+
+.ai-manju-guide-section,
+.ai-manju-guide-appendix article {
+  border: 3px solid #151515;
+  background: #fffef5;
+  box-shadow: 7px 7px 0 #151515;
+  padding: clamp(14px, 3vw, 28px);
+  scroll-margin-top: 18px;
+}
+
+.ai-manju-guide-section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 3px solid #151515;
+  padding-bottom: 12px;
+}
+
+.ai-manju-guide-section-head span {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 2px solid #151515;
+  background: #f4d35e;
+  box-shadow: 3px 3px 0 #151515;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ai-manju-guide-section-head h3,
+.ai-manju-guide-appendix h3 {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 32px);
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.ai-manju-guide figure {
+  margin: 18px 0 0;
+  border: 2px solid #151515;
+  background: #eaf7fb;
+  overflow: hidden;
+}
+
+.ai-manju-guide img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ai-manju-guide ul {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding-left: 1.2em;
+}
+
+.ai-manju-guide li {
+  line-height: 1.65;
+}
+
+.ai-manju-guide-appendix {
+  display: grid;
+  gap: 22px;
+  margin-top: 28px;
+}
+
+.ai-manju-guide-appendix img {
+  margin-top: 14px;
+  border: 2px solid #151515;
+  background: #eaf7fb;
+}
+
+@media (max-width: 720px) {
+  .ai-manju-guide {
+    padding: 16px;
+  }
+
+  .ai-manju-guide-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-manju-guide-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

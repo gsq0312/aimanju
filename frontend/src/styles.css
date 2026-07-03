@@ -1,6 +1,6 @@
 :root {
-  color: #18201c;
-  background: #f6f5ef;
+  color: #151515;
+  background: #fff8df;
   font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
 
@@ -8,15 +8,20 @@
   box-sizing: border-box;
 }
 
+html {
+  background: #fff8df;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #f6f5ef;
+  background: #fff8df;
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -24,280 +29,986 @@ button {
   cursor: pointer;
 }
 
-.app-loading {
+.manju-portal,
+.manju-portal-loading {
   min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 230, 122, 0.28), transparent 28rem),
+    radial-gradient(circle at 100% 20%, rgba(122, 214, 255, 0.26), transparent 30rem),
+    #fff8df;
+  color: #151515;
+}
+
+.manju-portal-loading {
   display: grid;
   place-items: center;
-  color: #536057;
+  padding: 32px;
+  font-weight: 900;
 }
 
-.auth-page {
-  min-height: 100vh;
+.manju-portal {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 420px;
-  gap: 40px;
-  align-items: center;
-  padding: 56px;
+  grid-template-columns: 292px minmax(0, 1fr);
 }
 
-.auth-hero h1 {
-  margin: 0 0 18px;
-  font-size: clamp(42px, 7vw, 92px);
-  line-height: 0.95;
+.manju-side {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 3px solid #151515;
+  background: #fffef5;
+  padding: 20px;
+}
+
+.manju-brand span {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.manju-brand h1 {
+  margin: 6px 0 0;
+  font-size: 27px;
+  line-height: 1.05;
   letter-spacing: 0;
 }
 
-.auth-hero p {
-  margin: 0;
-  max-width: 580px;
-  color: #5d675f;
-  font-size: 20px;
-  line-height: 1.7;
-}
-
-.auth-panel,
-.profile-modal {
-  background: #fff;
-  border: 1px solid #dfe3d8;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 18px 50px rgba(29, 46, 34, 0.12);
-}
-
-.auth-tabs {
+.manju-user {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 12px;
+  border: 2px solid #151515;
+  background: #ddfbff;
+  box-shadow: 4px 4px 0 #151515;
 }
 
-.auth-tabs button,
-.side-nav button,
-.logout-btn,
-.modal-actions button,
-.project-list-head button {
-  border: 1px solid #dfe3d8;
-  background: #f8f8f3;
-  color: #263129;
-  border-radius: 6px;
-  min-height: 40px;
+.manju-user-public {
+  background: #ffe7fa;
 }
 
-.auth-tabs button.active,
-.side-nav button.active,
-.primary-btn {
-  border-color: #183421;
-  background: #183421;
-  color: #fff;
-}
-
-label {
-  display: grid;
-  gap: 8px;
-  color: #465047;
-  font-size: 14px;
-  margin: 14px 0;
-}
-
-input {
-  border: 1px solid #d8ded3;
-  background: #fff;
-  color: #18201c;
-  border-radius: 6px;
-  min-height: 42px;
-  padding: 0 12px;
-}
-
-.primary-btn {
-  width: 100%;
-  min-height: 44px;
-  border-radius: 6px;
-  border: 0;
-}
-
-.form-error {
-  color: #a12f2f;
-  background: #fff0ef;
-  border: 1px solid #f1c5c1;
-  border-radius: 6px;
-  padding: 10px 12px;
-}
-
-.form-note {
-  color: #1e6237;
-}
-
-.app-shell {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 286px minmax(0, 1fr);
-}
-
-.app-side {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 20px;
-  background: #ffffff;
-  border-right: 1px solid #dde3d8;
-  overflow: auto;
-}
-
-.brand-block {
-  display: grid;
-  gap: 6px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #edf0e9;
-}
-
-.brand-block strong {
-  font-size: 20px;
-}
-
-.brand-block span,
-.empty-text,
-.project-row span,
-.gallery-card span {
-  color: #748076;
-  font-size: 12px;
-}
-
-.side-nav {
-  display: grid;
-  gap: 8px;
-}
-
-.side-nav button,
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 0 12px;
-}
-
-.project-list {
-  display: grid;
-  gap: 8px;
-}
-
-.project-list-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #4d594f;
-  font-size: 14px;
-}
-
-.project-list-head button {
-  width: 34px;
-  min-height: 34px;
-  display: grid;
-  place-items: center;
-}
-
-.project-row {
-  display: grid;
-  gap: 5px;
-  width: 100%;
-  text-align: left;
-  border: 1px solid #e3e8df;
-  background: #fafbf8;
-  border-radius: 6px;
-  padding: 10px;
-}
-
-.project-row.active {
-  border-color: #183421;
-  background: #edf5ee;
-}
-
-.logout-btn {
-  margin-top: auto;
-}
-
-.app-main {
+.manju-user strong,
+.manju-user span {
+  display: block;
   min-width: 0;
-  overflow: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.gallery-page {
-  padding: 36px;
+.manju-user strong {
+  font-size: 15px;
 }
 
-.gallery-page h1 {
-  margin: 0 0 8px;
-  font-size: 34px;
+.manju-user span {
+  font-size: 12px;
+  color: rgba(21, 21, 21, 0.72);
 }
 
-.gallery-page header p {
-  margin: 0 0 24px;
-  color: #687369;
+.manju-user button {
+  justify-self: start;
+  margin-top: 4px;
+  border: 2px solid #151515;
+  background: #fffef5;
+  color: #151515;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 2px 2px 0 #151515;
 }
 
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px;
-}
-
-.gallery-card,
-.gallery-empty {
-  background: #fff;
-  border: 1px solid #dde3d8;
-  border-radius: 8px;
-  padding: 18px;
-}
-
-.gallery-card h2 {
-  margin: 0 0 8px;
-  font-size: 18px;
-}
-
-.gallery-card p {
-  margin: 0 0 16px;
-  color: #536057;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(24, 32, 28, 0.32);
-  padding: 24px;
-  z-index: 30;
-}
-
-.profile-modal {
-  width: min(440px, 100%);
-}
-
-.profile-modal h2 {
-  margin: 0 0 8px;
-}
-
-.modal-actions {
+.manju-nav {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
   margin-top: 18px;
 }
 
-@media (max-width: 860px) {
-  .auth-page {
+.manju-nav button,
+.manju-project-head button,
+.manju-project-list button,
+.manju-guide-bottom,
+.manju-logout,
+.manju-auth-shortcuts button,
+.manju-auth-tabs button,
+.manju-auth-head button,
+.manju-submit-btn,
+.manju-login-required button,
+.manju-class-cards button {
+  border: 2px solid #151515;
+  background: #fffef5;
+  color: #151515;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #151515;
+}
+
+.manju-nav button {
+  min-height: 38px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-nav button.active {
+  background: #ffe66d;
+}
+
+.manju-project-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.manju-project-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.manju-project-head button {
+  padding: 6px 12px;
+  background: #a8f27a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-project-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.manju-project-list button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px;
+  text-align: left;
+}
+
+.manju-project-list button.active {
+  background: #ffe7fa;
+}
+
+.manju-project-list strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.manju-project-list span,
+.manju-project-empty {
+  font-size: 12px;
+  color: rgba(21, 21, 21, 0.62);
+}
+
+.manju-project-empty {
+  padding: 14px 4px;
+}
+
+.manju-wall-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.manju-wall-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.manju-wall-head button,
+.manju-wall-submit-shortcut {
+  border: 2px solid #151515;
+  background: #fffef5;
+  color: #151515;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #151515;
+}
+
+.manju-wall-head button {
+  padding: 6px 12px;
+  background: #a8f27a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-wall-submit-shortcut {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 10px;
+  padding: 10px;
+  text-align: left;
+  background: #ffe66d;
+}
+
+.manju-wall-submit-shortcut strong,
+.manju-wall-submit-shortcut span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manju-wall-submit-shortcut strong {
+  font-size: 13px;
+}
+
+.manju-wall-submit-shortcut span {
+  font-size: 12px;
+  color: rgba(21, 21, 21, 0.66);
+}
+
+.manju-wall-mini-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.manju-wall-mini-list a {
+  border: 2px solid #151515;
+  background: #fffef5;
+  color: #151515;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 3px 3px 0 #151515;
+}
+
+.manju-side-bottom {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.manju-guide-bottom {
+  width: 100%;
+  min-height: 40px;
+  background: #ddfbff;
+  font-weight: 900;
+}
+
+.manju-guide-bottom.active {
+  background: #a8f27a;
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #151515;
+}
+
+.manju-logout {
+  width: 100%;
+  min-height: 40px;
+  background: #ffd2eb;
+  font-weight: 900;
+}
+
+.manju-auth-shortcuts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.manju-auth-shortcuts button {
+  min-height: 40px;
+  font-weight: 900;
+}
+
+.manju-auth-shortcuts button:last-child {
+  background: #ffe66d;
+}
+
+.manju-main {
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.manju-main .ai-manju-studio {
+  min-height: 100vh;
+}
+
+.manju-wall-submit {
+  min-height: 100vh;
+  padding: clamp(20px, 4vw, 48px);
+}
+
+.manju-wall-submit .manju-group-widget {
+  margin: 0 0 20px;
+}
+
+.manju-wall-submit-panel {
+  border: 3px solid #151515;
+  background: #fffef5;
+  box-shadow: 8px 8px 0 #151515;
+  padding: clamp(18px, 3vw, 34px);
+}
+
+.manju-wall-submit-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 3px solid #151515;
+  padding-bottom: 18px;
+}
+
+.manju-wall-submit-head span {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.manju-wall-submit-head h2 {
+  margin: 6px 0 0;
+  font-size: clamp(28px, 5vw, 48px);
+  line-height: 1.05;
+}
+
+.manju-wall-submit-head button,
+.manju-wall-actions button {
+  border: 2px solid #151515;
+  background: #fffef5;
+  color: #151515;
+  min-height: 40px;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #151515;
+}
+
+.manju-wall-form {
+  display: grid;
+  gap: 14px;
+  max-width: 680px;
+  margin-top: 22px;
+}
+
+.manju-wall-form label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-wall-form input {
+  min-height: 44px;
+  border: 2px solid #151515;
+  border-radius: 0;
+  background: #fff;
+  color: #151515;
+  padding: 0 12px;
+  font: inherit;
+}
+
+.manju-wall-form input[type="file"] {
+  min-height: 0;
+  padding: 10px;
+}
+
+.manju-wall-file-name,
+.manju-wall-error,
+.manju-wall-message {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-wall-file-name {
+  color: rgba(21, 21, 21, 0.66);
+}
+
+.manju-wall-error {
+  color: #b42318;
+}
+
+.manju-wall-message {
+  color: #157347;
+}
+
+.manju-wall-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.manju-wall-actions button:last-child {
+  background: #a8f27a;
+}
+
+.manju-wall-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.manju-gallery {
+  padding: clamp(20px, 4vw, 48px);
+}
+
+.manju-gallery-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 3px solid #151515;
+  padding-bottom: 18px;
+}
+
+.manju-gallery-head > div {
+  min-width: 0;
+}
+
+.manju-gallery-head h2 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 52px);
+  letter-spacing: 0;
+}
+
+.manju-gallery-head p {
+  max-width: 440px;
+  margin: 0;
+  color: rgba(21, 21, 21, 0.72);
+  line-height: 1.6;
+}
+
+.manju-class-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(112px, 1fr));
+  gap: 8px;
+  width: min(520px, 100%);
+}
+
+.manju-class-cards button {
+  min-height: 48px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.manju-class-cards button.active {
+  background: #ffe66d;
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #151515;
+}
+
+.manju-class-cards strong,
+.manju-class-cards span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manju-class-cards strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.manju-class-cards span {
+  margin-top: 3px;
+  font-size: 11px;
+  color: rgba(21, 21, 21, 0.66);
+}
+
+.manju-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.manju-gallery-card {
+  border: 2px solid #151515;
+  background: #fffef5;
+  box-shadow: 5px 5px 0 #151515;
+}
+
+.manju-gallery-card.group {
+  background: #f1ffe9;
+}
+
+.manju-gallery-body {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.manju-gallery-owner {
+  min-width: 0;
+}
+
+.manju-gallery-owner > span {
+  display: inline-block;
+  border: 2px solid #151515;
+  background: #ddfbff;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.manju-gallery-card.group .manju-gallery-owner > span {
+  background: #ffe7fa;
+}
+
+.manju-gallery-owner h3 {
+  margin: 8px 0 0;
+  font-size: 17px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.manju-gallery-owner p {
+  margin: 6px 0 0;
+  color: rgba(21, 21, 21, 0.7);
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.manju-gallery-work-list {
+  display: grid;
+  gap: 10px;
+}
+
+.manju-gallery-work-item {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 2px solid #151515;
+  background: #fffef5;
+  color: #151515;
+  min-height: 74px;
+  padding: 7px;
+  text-decoration: none;
+}
+
+.manju-gallery-work-cover {
+  aspect-ratio: 16 / 10;
+  border: 2px solid #151515;
+  background: #ddfbff;
+  color: #151515;
+  overflow: hidden;
+}
+
+.manju-gallery-work-cover span {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.manju-gallery-work-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.manju-gallery-work-item strong,
+.manju-gallery-work-item span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manju-gallery-work-item strong {
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.manju-gallery-work-item span {
+  margin-top: 5px;
+  color: rgba(21, 21, 21, 0.66);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.manju-gallery-empty {
+  grid-column: 1 / -1;
+  border: 2px dashed #151515;
+  padding: 28px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.manju-login-required {
+  width: min(760px, calc(100% - 40px));
+  margin: clamp(28px, 6vw, 80px) auto;
+  border: 3px solid #151515;
+  background: #fffef5;
+  box-shadow: 8px 8px 0 #151515;
+  padding: clamp(20px, 4vw, 40px);
+}
+
+.manju-login-required span,
+.manju-auth-head span {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.manju-login-required h2,
+.manju-auth-head h2 {
+  margin: 6px 0 0;
+  font-size: clamp(28px, 5vw, 46px);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.manju-login-required p {
+  max-width: 560px;
+  margin: 16px 0 0;
+  color: rgba(21, 21, 21, 0.72);
+  line-height: 1.7;
+}
+
+.manju-login-required div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.manju-login-required button {
+  min-height: 42px;
+  padding: 0 18px;
+  font-weight: 900;
+}
+
+.manju-login-required button:last-child {
+  background: #ffe66d;
+}
+
+.manju-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(21, 21, 21, 0.44);
+}
+
+.manju-auth-dialog,
+.manju-account-dialog {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border: 3px solid #151515;
+  background: #fffef5;
+  box-shadow: 10px 10px 0 #151515;
+  padding: 20px;
+}
+
+.manju-auth-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 3px solid #151515;
+  padding-bottom: 14px;
+}
+
+.manju-auth-head h2 {
+  font-size: 30px;
+}
+
+.manju-auth-head button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.manju-auth-tabs button {
+  min-height: 40px;
+  font-weight: 900;
+}
+
+.manju-auth-tabs button.active {
+  background: #ffe66d;
+}
+
+.manju-auth-dialog label,
+.manju-account-dialog label {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-auth-dialog input,
+.manju-account-dialog input,
+.manju-auth-dialog select,
+.manju-account-dialog select {
+  min-height: 44px;
+  border: 2px solid #151515;
+  border-radius: 0;
+  background: #fff;
+  color: #151515;
+  padding: 0 12px;
+}
+
+.manju-auth-dialog select,
+.manju-account-dialog select {
+  appearance: auto;
+}
+
+.manju-form-error,
+.manju-form-note {
+  margin: 14px 0 0;
+  border: 2px solid #151515;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-form-error {
+  background: #ffd2eb;
+}
+
+.manju-form-note {
+  background: #ddfbff;
+}
+
+.manju-submit-btn {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 16px;
+  background: #a8f27a;
+  font-weight: 900;
+}
+
+.manju-submit-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.manju-group-widget {
+  margin: clamp(18px, 3vw, 34px) clamp(20px, 4vw, 48px) 0;
+  border: 3px solid #151515;
+  background: #fffef5;
+  box-shadow: 7px 7px 0 #151515;
+  padding: clamp(14px, 3vw, 24px);
+}
+
+.manju-group-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 3px solid #151515;
+  padding-bottom: 12px;
+}
+
+.manju-group-head p {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.manju-group-head h2 {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 30px);
+  line-height: 1.15;
+}
+
+.manju-group-head > span {
+  flex: 0 0 auto;
+  border: 2px solid #151515;
+  background: #ddfbff;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.manju-group-message {
+  margin-top: 12px;
+  border: 2px solid #151515;
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.manju-group-message.success {
+  background: #a8f27a;
+}
+
+.manju-group-message.error {
+  background: #ffd2eb;
+}
+
+.manju-group-current p,
+.manju-group-create p {
+  margin: 12px 0;
+  color: rgba(21, 21, 21, 0.72);
+  line-height: 1.55;
+}
+
+.manju-group-members,
+.manju-group-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.manju-group-members span {
+  border: 2px solid #151515;
+  background: #ffe7fa;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.manju-group-create-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.manju-group-create-row input {
+  width: 100%;
+  min-height: 42px;
+  border: 2px solid #151515;
+  background: #fff;
+  color: #151515;
+  padding: 0 12px;
+}
+
+.manju-group-widget button {
+  min-height: 40px;
+  border: 2px solid #151515;
+  background: #a8f27a;
+  color: #151515;
+  padding: 0 12px;
+  font-weight: 900;
+  box-shadow: 3px 3px 0 #151515;
+}
+
+.manju-group-widget button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.manju-group-secondary {
+  background: #ffd2eb !important;
+}
+
+.manju-group-list {
+  flex-direction: column;
+}
+
+.manju-group-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 2px solid #151515;
+  background: #fffef5;
+  padding: 10px;
+}
+
+.manju-group-item div {
+  min-width: 0;
+}
+
+.manju-group-item strong,
+.manju-group-item span {
+  display: block;
+}
+
+.manju-group-item span {
+  margin-top: 4px;
+  color: rgba(21, 21, 21, 0.66);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 880px) {
+  .manju-portal {
     grid-template-columns: 1fr;
-    padding: 28px;
   }
 
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .app-side {
+  .manju-side {
     position: relative;
     height: auto;
+    border-right: 0;
+    border-bottom: 3px solid #151515;
+  }
+
+  .manju-gallery-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .manju-wall-submit-head,
+  .manju-wall-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .manju-class-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .manju-group-head,
+  .manju-group-item,
+  .manju-group-create-row {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 520px) {
+  .manju-gallery {
+    padding: 16px;
+  }
+
+  .manju-nav,
+  .manju-auth-shortcuts,
+  .manju-class-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .manju-gallery-grid {
+    grid-template-columns: 1fr;
   }
 }

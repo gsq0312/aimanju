@@ -7,6 +7,9 @@ import './AiManjuStudio.css';
 
 const STORAGE_KEY = 'ai-manju-studio-draft-v3';
 const STORAGE_KEY_FALLBACKS = [STORAGE_KEY, 'ai-manju-studio-draft-v2'];
+const PUBLIC_ASSET_BASE = import.meta.env.BASE_URL || '/';
+const getStyleReferenceImage = (styleKey, extension = 'jpeg') =>
+  `${PUBLIC_ASSET_BASE}assets/style-images/${styleKey}/reference.${extension}`;
 
 const GENRE_WORLD_SETS = [
 {
@@ -1047,7 +1050,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
   };
 
   const streamDeepSeekText = async (path, payload, onText) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('aimanju_token') || localStorage.getItem('token');
     const response = await fetch(resolveApiPath(path), {
       method: 'POST',
       headers: {
@@ -1282,7 +1285,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
       setCurrentProjectTitle(saved.title || '');
       setSaveTitle(saved.title || '');
       switchToAiManjuStudio(saved);
-      window.dispatchEvent(new Event('ai-manju-projects-changed'));
+      window.dispatchEvent(new CustomEvent('ai-manju-projects-changed', { detail: { project: saved } }));
     } catch (error) {
       setProjectSaveError(error.message || '保存失败，请稍后重试');
     } finally {
@@ -1306,7 +1309,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
       setSaveTitle(saved.title || '');
       setShowSaveModal(false);
       switchToAiManjuStudio(saved);
-      window.dispatchEvent(new Event('ai-manju-projects-changed'));
+      window.dispatchEvent(new CustomEvent('ai-manju-projects-changed', { detail: { project: saved } }));
     } catch (error) {
       setProjectSaveError(error.message || '保存失败，请稍后重试');
     } finally {
@@ -1767,17 +1770,19 @@ ${segmentIndex === 0 ? `首帧提示词：${segment.startPrompt}` : `首帧来�
                     
                                         <div className="ai-manju-style-image">
                                             <img
-                        src={`/style-images/${style.key}/reference.jpeg`}
+                        src={getStyleReferenceImage(style.key)}
                         alt={style.name}
+                        loading="lazy"
+                        decoding="async"
                         onError={(event) => {
-                          if (event.target.src.endsWith('.jpeg')) {
-                            event.target.src = event.target.src.replace('.jpeg', '.svg');
-                          } else {
-                            event.target.onerror = null;
-                            event.target.src = '';
+                          if (event.currentTarget.dataset.fallback !== 'svg') {
+                            event.currentTarget.dataset.fallback = 'svg';
+                            event.currentTarget.src = getStyleReferenceImage(style.key, 'svg');
+                            return;
                           }
-                        }} />
-                      
+                          event.currentTarget.style.visibility = 'hidden';
+                        }}
+                      />
                                         </div>
                                         <strong>{style.name}</strong>
                                     </button>);

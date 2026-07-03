@@ -1,17 +1,22 @@
-const ROOT_API_PREFIX = '/api/'
+const rawBasePath = import.meta.env.BASE_URL || '/'
+const APP_BASE_PATH = rawBasePath.endsWith('/') ? rawBasePath.slice(0, -1) : rawBasePath
+const ROOT_API_PREFIX = `${APP_BASE_PATH}/api/`.replace('//', '/')
 
 function getToken() {
   return localStorage.getItem('aimanju_token')
 }
 
 export function resolveApiPath(path) {
+  if (!path) return path
+  if (/^(https?:|data:|blob:)/i.test(path)) return path
+  if (APP_BASE_PATH && path.startsWith('/api/')) return `${APP_BASE_PATH}${path}`
   return path
 }
 
 export function resolveApiAssetUrl(url) {
   if (!url) return ''
   if (/^(https?:|data:|blob:)/i.test(url)) return url
-  return url
+  return resolveApiPath(url)
 }
 
 async function parseError(res, fallback) {
@@ -29,7 +34,7 @@ export async function request(path, options = {}) {
     ...(options.headers || {}),
   }
   if (token) headers.Authorization = `Bearer ${token}`
-  const res = await fetch(path, { ...options, headers })
+  const res = await fetch(resolveApiPath(path), { ...options, headers })
   if (res.status === 401) {
     localStorage.removeItem('aimanju_token')
     throw new Error(await parseError(res, '请登录后使用'))
@@ -43,7 +48,7 @@ export async function uploadForm(path, formData) {
   const token = getToken()
   const headers = {}
   if (token) headers.Authorization = `Bearer ${token}`
-  const res = await fetch(path, { method: 'POST', body: formData, headers })
+  const res = await fetch(resolveApiPath(path), { method: 'POST', body: formData, headers })
   if (res.status === 401) {
     localStorage.removeItem('aimanju_token')
     throw new Error(await parseError(res, '请登录后使用'))
@@ -55,6 +60,7 @@ export async function uploadForm(path, formData) {
 export const auth = {
   login: (studentId, password) =>
     request('/api/auth/login', { method: 'POST', body: JSON.stringify({ student_id: studentId, password }) }),
+  registerOptions: () => request('/api/auth/register-options'),
   register: (email, password, name, _emailCode, studentId, className) =>
     request('/api/auth/register', {
       method: 'POST',
@@ -79,6 +85,24 @@ export const projects = {
 
 export const gallery = {
   list: () => request('/api/manju/gallery'),
+}
+
+export const wallWorks = {
+  my: () => request('/api/manju/wall-works/my'),
+  create: (title, videoUrl, coverFile) => {
+    const form = new FormData()
+    form.append('title', title)
+    form.append('video_url', videoUrl)
+    if (coverFile) form.append('cover', coverFile)
+    return uploadForm('/api/manju/wall-works', form)
+  },
+}
+
+export const groups = {
+  status: () => request('/api/manju/groups/status'),
+  create: (data) => request('/api/manju/groups', { method: 'POST', body: JSON.stringify(data) }),
+  join: (groupId) => request(`/api/manju/groups/${groupId}/join`, { method: 'POST' }),
+  leave: () => request('/api/manju/groups/leave', { method: 'POST' }),
 }
 
 export { ROOT_API_PREFIX }
