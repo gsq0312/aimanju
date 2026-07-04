@@ -1263,10 +1263,6 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
       setPromptsError('先生成并确认故事梗概。');
       return;
     }
-    if (!characterCards.length && !characterCardsText.trim()) {
-      setPromptsError('先生成或粘贴角色设定卡。');
-      return;
-    }
     if (!selectedStyleInfo) {
       setPromptsError('先选择画面风格。');
       return;
