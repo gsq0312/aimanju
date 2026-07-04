@@ -11,6 +11,45 @@ const PUBLIC_ASSET_BASE = import.meta.env.BASE_URL || '/';
 const getStyleReferenceImage = (styleKey, extension = 'jpeg') =>
   `${PUBLIC_ASSET_BASE}assets/style-images/${styleKey}/reference.${extension}`;
 
+async function writeClipboardText(text) {
+  const value = String(text ?? '');
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch {
+      // Some classroom browsers block the async Clipboard API even on HTTPS.
+    }
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '0';
+  textarea.style.left = '-9999px';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+
+  const selection = document.getSelection();
+  const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  try {
+    if (!document.execCommand('copy')) {
+      throw new Error('document.execCommand copy returned false');
+    }
+  } finally {
+    document.body.removeChild(textarea);
+    if (selectedRange && selection) {
+      selection.removeAllRanges();
+      selection.addRange(selectedRange);
+    }
+  }
+}
+
 const GENRE_WORLD_SETS = [
 {
   key: 'urban-power',
@@ -745,6 +784,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
   const [segments, setSegments] = useState(initialDraft.segments);
   const [currentStep, setCurrentStep] = useState(initialDraft.currentStep);
   const [copiedKey, setCopiedKey] = useState('');
+  const [copyStatus, setCopyStatus] = useState(null);
   const [aiUsage, setAiUsage] = useState(null);
   const [aiStoryLoading, setAiStoryLoading] = useState(false);
   const [aiStoryError, setAiStoryError] = useState('');
@@ -1027,12 +1067,19 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
   }, []);
 
   const copyText = async (text, key) => {
+    const value = String(text ?? '');
     try {
-      await navigator.clipboard.writeText(text);
+      await writeClipboardText(value);
       setCopiedKey(key);
+      setCopyStatus({ type: 'success', text: '已复制到剪贴板，可以粘贴到 DeepSeek 或豆包。' });
       window.setTimeout(() => setCopiedKey(''), 1600);
+      window.setTimeout(() => setCopyStatus(null), 2200);
     } catch (error) {
       console.error('复制失败:', error);
+      setCopyStatus({ type: 'error', text: '浏览器拦截了自动复制，请用弹窗里的内容手动复制。' });
+      if (value && window.prompt) {
+        window.prompt('浏览器拦截了自动复制，请手动复制下面内容：', value);
+      }
     }
   };
 
@@ -2285,6 +2332,7 @@ ${segmentIndex === 0 ? `首帧提示词：${segment.startPrompt}` : `首帧来�
                     </div>
                     <p className="ai-manju-section-desc">{flowStepText(FLOW_STEPS[currentStep], 'desc')}</p>
                 </div>
+                {copyStatus && <p className={`ai-manju-copy-status ${copyStatus.type}`}>{copyStatus.text}</p>}
                 {renderStepContent()}
             </section>
 

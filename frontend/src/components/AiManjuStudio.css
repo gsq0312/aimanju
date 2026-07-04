@@ -171,6 +171,26 @@
     color: var(--manju-ink);
 }
 
+.ai-manju-copy-status {
+    margin: 0 0 0.9rem;
+    width: fit-content;
+    max-width: min(720px, 100%);
+    padding: 0.5rem 0.72rem;
+    border: 2px solid var(--manju-ink);
+    box-shadow: 3px 3px 0 var(--manju-ink);
+    font-size: 0.84rem;
+    font-weight: 900;
+    color: var(--manju-ink);
+}
+
+.ai-manju-copy-status.success {
+    background: var(--manju-green);
+}
+
+.ai-manju-copy-status.error {
+    background: var(--manju-pink);
+}
+
 .modal-overlay {
     position: fixed;
     inset: 0;
