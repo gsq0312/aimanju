@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext.jsx'
 import { auth as authApi, gallery as galleryApi, projects as projectApi, resolveApiAssetUrl, wallWorks as wallWorksApi } from './api'
 import AiManjuGuide from './components/AiManjuGuide.jsx'
 import AiManjuStudio from './components/AiManjuStudio.jsx'
+import ExcellentWorks from './components/ExcellentWorks.jsx'
 import ManjuGroupWidget from './components/ManjuGroupWidget.jsx'
 
 const emptyForm = {
@@ -370,6 +371,9 @@ export default function App() {
           <button className={activeView === 'gallery' ? 'active' : ''} onClick={() => setActiveView('gallery')}>
             小作品墙
           </button>
+          <button className={activeView === 'excellent' ? 'active' : ''} onClick={() => setActiveView('excellent')}>
+            优秀作品欣赏
+          </button>
         </div>
 
         <div className="manju-project-head">
@@ -443,6 +447,8 @@ export default function App() {
           </>
         ) : activeView === 'guide' ? (
           <AiManjuGuide />
+        ) : activeView === 'excellent' ? (
+          <ExcellentWorks />
         ) : activeView === 'wallSubmit' && user ? (
           <section className="manju-wall-submit">
             <ManjuGroupWidget onChanged={() => { reloadProjects(); reloadGallery(); reloadWallWorks() }} />
