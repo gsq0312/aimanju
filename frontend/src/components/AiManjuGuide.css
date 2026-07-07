@@ -112,7 +112,8 @@
 }
 
 .ai-manju-guide figure {
-  margin: 18px 0 0;
+  max-width: 980px;
+  margin: 18px auto 0;
   border: 2px solid #151515;
   background: #eaf7fb;
   overflow: hidden;
@@ -121,7 +122,9 @@
 .ai-manju-guide img {
   display: block;
   width: 100%;
+  max-width: 980px;
   height: auto;
+  margin-inline: auto;
 }
 
 .ai-manju-guide ul {

@@ -4,7 +4,7 @@ const guideSections = [
   {
     step: '入口',
     title: '打开系统后先看这三个位置',
-    image: 'aimanju-guide/01_overview.png',
+    image: 'aimanju-guide/01_overview.jpg',
     points: [
       '左侧是系统导航，可以进入创作工作台、作品墙和使用说明。',
       '上方 01-06 是主流程导航，可以点任意步骤查看。',
@@ -15,7 +15,7 @@ const guideSections = [
   {
     step: '1',
     title: '一句话故事：先把冲突立住',
-    image: 'aimanju-guide/02_story_action.png',
+    image: 'aimanju-guide/02_story_action.jpg',
     points: [
       '先点“全部随机”，系统会随机选择题材世界、人物数量和典型场景。',
       '点“DeepSeek生成一句话故事”，右侧会生成一句话故事。',
@@ -26,7 +26,7 @@ const guideSections = [
   {
     step: '2',
     title: '扩写梗概：按班级要求改总时长',
-    image: 'aimanju-guide/03_synopsis.png',
+    image: 'aimanju-guide/03_synopsis.jpg',
     points: [
       '不要死认默认 4 分 30 秒，先看老师要求。',
       '3 分钟约 18 段，4 分 30 秒约 27 段，6 分钟约 36 段。',
@@ -37,7 +37,7 @@ const guideSections = [
   {
     step: '3',
     title: '画面风格：复制画风提示词',
-    image: 'aimanju-guide/04_style.png',
+    image: 'aimanju-guide/04_style.jpg',
     points: [
       '左侧先选风格分类，中间点具体风格图片。',
       '选中后右侧会出现对应画风提示词。',
@@ -48,7 +48,7 @@ const guideSections = [
   {
     step: '4',
     title: '角色设定卡：生成设定，再去豆包做角色图',
-    image: 'aimanju-guide/05_character.png',
+    image: 'aimanju-guide/05_character.jpg',
     points: [
       '系统根据前面的故事、梗概和画风生成角色设定卡。',
       '角色设定卡是给豆包生成角色参考图用的文字。',
@@ -59,7 +59,7 @@ const guideSections = [
   {
     step: '5',
     title: '分段提示词：改时长和段数',
-    image: 'aimanju-guide/06_segments.png',
+    image: 'aimanju-guide/06_segments.jpg',
     points: [
       '默认逻辑是每 10 秒一段，段数要和老师要求对应。',
       '需要改提示词开头关于总时长、每段 10 秒、总段数的几句话。',
@@ -70,7 +70,7 @@ const guideSections = [
   {
     step: '6',
     title: '首帧 / 尾帧：从分段结果里找提示词',
-    image: 'aimanju-guide/06_segments.png',
+    image: 'aimanju-guide/06_segments.jpg',
     points: [
       '每一段都应该有首帧提示词和尾帧提示词。',
       '先复制首帧提示词到豆包生成首帧图。',
@@ -81,7 +81,7 @@ const guideSections = [
   {
     step: '7',
     title: '最终预览与保存：检查完整后再保存',
-    image: 'aimanju-guide/07_preview_save.png',
+    image: 'aimanju-guide/07_preview_save.jpg',
     points: [
       '点“最终预览”，检查故事、梗概、画风、角色、分段提示词和首尾帧。',
       '发现时长、段数或角色不一致，就回到前面的步骤修改。',
@@ -92,7 +92,7 @@ const guideSections = [
   {
     step: '8',
     title: '作品墙：看自己和同学的作品',
-    image: 'aimanju-guide/11_gallery.png',
+    image: 'aimanju-guide/11_gallery.jpg',
     points: [
       '点“作品墙”进入展示页。',
       '先选择班级，只看本班或指定班级的作品。',
@@ -142,7 +142,7 @@ export default function AiManjuGuide() {
       <section className="ai-manju-guide-appendix">
         <article>
           <h3>附录：登录 / 注册</h3>
-          <img src="aimanju-guide/08_register.png" alt="登录注册界面" loading="lazy" />
+          <img src="aimanju-guide/08_register.jpg" alt="登录注册界面" loading="lazy" />
           <ul>
             <li>注册时填写姓名、邮箱、学号，班级从下拉列表里选择。</li>
             <li>新系统不需要收邮件，注册成功后会直接进入系统。</li>
@@ -152,7 +152,7 @@ export default function AiManjuGuide() {
 
         <article>
           <h3>附录：小组方法</h3>
-          <img src="aimanju-guide/10_group_widget.png" alt="小组模块按钮说明" loading="lazy" />
+          <img src="aimanju-guide/10_group_widget.jpg" alt="小组模块按钮说明" loading="lazy" />
           <ul>
             <li>不加入小组：直接做作品，添加上墙后作品墙显示个人作品卡片。</li>
             <li>自己建小组：输入小组名，点“创建小组”。</li>
