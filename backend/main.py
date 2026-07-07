@@ -31,9 +31,9 @@ AI_API_KEY = os.getenv("AIMANJU_DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_API_KE
 AI_MODEL = os.getenv("AIMANJU_AI_MODEL") or os.getenv("AI_MODEL") or "deepseek-chat"
 AI_TIMEOUT_SECONDS = float(os.getenv("AIMANJU_AI_TIMEOUT_SECONDS", "120"))
 ALLOWED_REGISTER_CLASSES = [
-    "2401",
-    "2402",
-    "2403",
+    "24电商01班",
+    "24电商02班",
+    "24电商03班",
 ]
 DEFAULT_MAX_GROUP_MEMBERS = 6
 
