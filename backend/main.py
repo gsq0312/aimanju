@@ -35,7 +35,7 @@ ALLOWED_REGISTER_CLASSES = [
     "24电商02班",
     "24电商03班",
 ]
-DEFAULT_MAX_GROUP_MEMBERS = 6
+DEFAULT_MAX_GROUP_MEMBERS = 4
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -106,7 +106,7 @@ def init_db() -> None:
                 class_name TEXT NOT NULL,
                 name TEXT NOT NULL,
                 created_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                max_members INTEGER NOT NULL DEFAULT 6,
+                max_members INTEGER NOT NULL DEFAULT 4,
                 is_locked INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,

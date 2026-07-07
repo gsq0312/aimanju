@@ -1,9 +1,28 @@
 import { useEffect, useState } from 'react'
 import { groups as groupsApi } from '../api'
 
+const GROUP_NAME_SEEDS = [
+  '赛博武侠组',
+  '唐朝奇遇组',
+  '星际漫剧组',
+  '长安异能组',
+  '机甲侠客组',
+  '山海异兽组',
+  '月下江湖组',
+  '霓虹修真组',
+  '青铜神话组',
+  '未来古风组',
+  '百鬼夜行组',
+  '云端少年组',
+]
+
+function randomGroupName() {
+  return GROUP_NAME_SEEDS[Math.floor(Math.random() * GROUP_NAME_SEEDS.length)]
+}
+
 export default function ManjuGroupWidget({ onChanged }) {
   const [status, setStatus] = useState(null)
-  const [groupName, setGroupName] = useState('')
+  const [groupName, setGroupName] = useState(() => randomGroupName())
   const [message, setMessage] = useState({ type: '', text: '' })
   const [loading, setLoading] = useState(false)
   const [workingId, setWorkingId] = useState('')
@@ -39,7 +58,7 @@ export default function ManjuGroupWidget({ onChanged }) {
     setMessage({ type: '', text: '' })
     try {
       await groupsApi.create({ name })
-      setGroupName('')
+      setGroupName(randomGroupName())
       setMessage({ type: 'success', text: '小组已创建' })
       await refresh()
     } catch (error) {
@@ -123,6 +142,12 @@ export default function ManjuGroupWidget({ onChanged }) {
               {workingId === 'create' ? '创建中...' : '创建小组'}
             </button>
           </div>
+          <div className="manju-group-toolbar">
+            <button type="button" className="manju-group-refresh" onClick={refresh} disabled={loading}>
+              {loading ? '刷新中...' : '刷新小组列表'}
+            </button>
+            <span>同学新建小组后，点刷新就能看到本班最新小组。</span>
+          </div>
         </div>
       )}
 
@@ -132,6 +157,9 @@ export default function ManjuGroupWidget({ onChanged }) {
             <article key={group.id} className="manju-group-item">
               <div>
                 <strong>{group.name}</strong>
+                <span className="manju-group-count">
+                  {group.members.length}/{group.max_members || 4} 人
+                </span>
                 <span>{group.members.map((member) => member.name).join('、') || '暂无成员'}</span>
               </div>
               <button

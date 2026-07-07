@@ -1073,6 +1073,19 @@ button {
   padding: 0 12px;
 }
 
+.manju-group-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.manju-group-toolbar span {
+  color: rgba(21, 21, 21, 0.66);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .manju-group-widget button {
   min-height: 40px;
   border: 2px solid #151515;
@@ -1090,6 +1103,10 @@ button {
 
 .manju-group-secondary {
   background: #ffd2eb !important;
+}
+
+.manju-group-refresh {
+  background: #ddfbff !important;
 }
 
 .manju-group-list {
@@ -1122,6 +1139,11 @@ button {
   overflow-wrap: anywhere;
 }
 
+.manju-group-item .manju-group-count {
+  color: #151515;
+  font-weight: 900;
+}
+
 @media (max-width: 880px) {
   .manju-portal {
     grid-template-columns: 1fr;
@@ -1152,7 +1174,8 @@ button {
 
   .manju-group-head,
   .manju-group-item,
-  .manju-group-create-row {
+  .manju-group-create-row,
+  .manju-group-toolbar {
     grid-template-columns: 1fr;
     flex-direction: column;
     align-items: stretch;
