@@ -10,6 +10,33 @@ export const excellentWorkCategories = [
 
 export const excellentWorks = [
   {
+    id: 27,
+    title: 'AI 短剧《万物生：问心》',
+    category: '玄幻武侠',
+    tags: ['世界观', '剧情短片'],
+    platform: '抖音',
+    cover: `${excellentAssetBase}excellent-27-wanwusheng-wenxin.jpeg`,
+    url: 'https://v.douyin.com/KUDH2rc93Bs/',
+  },
+  {
+    id: 28,
+    title: 'AI 短片《纸手机》',
+    category: 'AI短剧',
+    tags: ['情感叙事', '爆款短片'],
+    platform: 'B站',
+    cover: `${excellentAssetBase}excellent-28-zhishouji.jpeg`,
+    url: 'https://www.bilibili.com/video/BV1tFApzYEPb/',
+  },
+  {
+    id: 29,
+    title: 'AI 短片《牌子》',
+    category: 'AI短剧',
+    tags: ['荒诞设定', '高播放'],
+    platform: 'B站',
+    cover: `${excellentAssetBase}excellent-29-paizi.jpeg`,
+    url: 'https://www.bilibili.com/video/BV11mFLziEyP/',
+  },
+  {
     id: 14,
     title: '玄幻武侠《百鬼夜行》第二期',
     category: '玄幻武侠',

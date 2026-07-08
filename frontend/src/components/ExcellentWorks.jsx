@@ -49,7 +49,7 @@ export default function ExcellentWorks() {
               </div>
               <h3>{work.title}</h3>
               <a className="excellent-work-link" href={work.url} target="_blank" rel="noreferrer">
-                打开抖音
+                打开{work.platform || '抖音'}
               </a>
             </div>
           </article>
