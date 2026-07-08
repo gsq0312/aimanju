@@ -10,14 +10,6 @@ export const excellentWorkCategories = [
 
 export const excellentWorks = [
   {
-    id: 13,
-    title: '花猫南北：东半球目前最好的 AI 短剧',
-    category: 'AI短剧',
-    tags: ['短剧结构', '爆款叙事'],
-    cover: `${excellentAssetBase}excellent-13.jpeg`,
-    url: 'https://v.douyin.com/8QuRFHArg7k/',
-  },
-  {
     id: 14,
     title: '玄幻武侠《百鬼夜行》第二期',
     category: '玄幻武侠',
@@ -34,14 +26,6 @@ export const excellentWorks = [
     url: 'https://v.douyin.com/1Yujo4h7yjw/',
   },
   {
-    id: 16,
-    title: 'AI 音乐短片《潇洒走一回》Fusion Trap',
-    category: 'AI音乐',
-    tags: ['音乐改编', 'MV'],
-    cover: `${excellentAssetBase}excellent-16.webp`,
-    url: 'https://v.douyin.com/6hz5bt8o2Yk/',
-  },
-  {
     id: 17,
     title: 'AI 短片《山君娶妻 / 伥鬼游行》',
     category: '玄幻武侠',
@@ -56,22 +40,6 @@ export const excellentWorks = [
     tags: ['动作叙事', '电影感'],
     cover: `${excellentAssetBase}excellent-18.jpeg`,
     url: 'https://www.douyin.com/video/7641314157903547689',
-  },
-  {
-    id: 21,
-    title: 'AI 科幻短片《机械纪元》第 1 集：初生',
-    category: '科幻动作',
-    tags: ['科幻世界观', '系列短片'],
-    cover: `${excellentAssetBase}excellent-21.jpeg`,
-    url: 'https://www.douyin.com/video/7641162959258930459',
-  },
-  {
-    id: 23,
-    title: 'AI 音乐 MV《刀剑如梦》国风摇滚版',
-    category: 'AI音乐',
-    tags: ['Suno', '武侠MV'],
-    cover: `${excellentAssetBase}excellent-23.jpeg`,
-    url: 'https://www.douyin.com/video/7587326319604567334',
   },
   {
     id: 26,
