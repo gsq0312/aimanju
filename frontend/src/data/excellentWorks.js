@@ -38,7 +38,7 @@ export const excellentWorks = [
     title: 'AI 短片《掠夺行动》',
     category: '科幻动作',
     tags: ['动作叙事', '电影感'],
-    cover: `${excellentAssetBase}excellent-18.jpeg`,
+    cover: `${excellentAssetBase}excellent-18-v2.jpeg`,
     url: 'https://www.douyin.com/video/7641314157903547689',
   },
   {
@@ -46,7 +46,7 @@ export const excellentWorks = [
     title: 'AI 原创短片《丧尸清道夫》重制版',
     category: '科幻动作',
     tags: ['末世题材', '短片重制'],
-    cover: `${excellentAssetBase}excellent-26.jpeg`,
+    cover: `${excellentAssetBase}excellent-26-v2.jpeg`,
     url: 'https://www.douyin.com/video/7637813720252435755',
   },
 ]
