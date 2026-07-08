@@ -13,22 +13,19 @@ const getStyleReferenceImage = (styleKey, extension = 'jpeg') =>
 
 async function writeClipboardText(text) {
   const value = String(text ?? '');
-  if (navigator.clipboard?.writeText && window.isSecureContext) {
-    try {
-      await navigator.clipboard.writeText(value);
-      return;
-    } catch {
-      // Some classroom browsers block the async Clipboard API even on HTTPS.
-    }
-  }
-
+  let copied = false;
   const textarea = document.createElement('textarea');
   textarea.value = value;
-  textarea.setAttribute('readonly', '');
+  textarea.setAttribute('aria-hidden', 'true');
   textarea.style.position = 'fixed';
-  textarea.style.top = '0';
-  textarea.style.left = '-9999px';
-  textarea.style.opacity = '0';
+  textarea.style.top = '12px';
+  textarea.style.left = '12px';
+  textarea.style.width = '1px';
+  textarea.style.height = '1px';
+  textarea.style.padding = '0';
+  textarea.style.border = '0';
+  textarea.style.opacity = '0.01';
+  textarea.style.zIndex = '-1';
   document.body.appendChild(textarea);
 
   const selection = document.getSelection();
@@ -38,15 +35,28 @@ async function writeClipboardText(text) {
   textarea.setSelectionRange(0, textarea.value.length);
 
   try {
-    if (!document.execCommand('copy')) {
-      throw new Error('document.execCommand copy returned false');
-    }
+    copied = document.execCommand('copy');
+  } catch {
+    copied = false;
   } finally {
     document.body.removeChild(textarea);
     if (selectedRange && selection) {
       selection.removeAllRanges();
       selection.addRange(selectedRange);
     }
+  }
+
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(value);
+      copied = true;
+    } catch {
+      // Some classroom browsers block the async Clipboard API even on HTTPS.
+    }
+  }
+
+  if (!copied) {
+    throw new Error('copy failed');
   }
 }
 

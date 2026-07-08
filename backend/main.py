@@ -34,6 +34,8 @@ ALLOWED_REGISTER_CLASSES = [
     "24电商01班",
     "24电商02班",
     "24电商03班",
+    "24级市场营销01班",
+    "24级市场营销02班",
 ]
 DEFAULT_MAX_GROUP_MEMBERS = 4
 
