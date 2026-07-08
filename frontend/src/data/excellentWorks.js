@@ -30,7 +30,7 @@ export const excellentWorks = [
     title: 'AI 短片《山君娶妻 / 伥鬼游行》',
     category: '玄幻武侠',
     tags: ['民俗志怪', '国风短片'],
-    cover: `${excellentAssetBase}excellent-17.jpeg`,
+    cover: `${excellentAssetBase}excellent-17-v2.jpeg`,
     url: 'https://www.douyin.com/video/7640761319172061371',
   },
   {
