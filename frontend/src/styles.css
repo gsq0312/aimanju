@@ -1019,49 +1019,55 @@ button {
 }
 
 .manju-group-widget {
-  margin: clamp(18px, 3vw, 34px) clamp(20px, 4vw, 48px) 0;
-  border: 3px solid #151515;
+  display: grid;
+  grid-template-columns: minmax(190px, 0.6fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: clamp(10px, 2vw, 18px) clamp(16px, 3vw, 36px) 0;
+  border: 2px solid #151515;
   background: #fffef5;
-  box-shadow: 7px 7px 0 #151515;
-  padding: clamp(14px, 3vw, 24px);
+  box-shadow: 4px 4px 0 #151515;
+  padding: 10px;
 }
 
 .manju-group-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  border-bottom: 3px solid #151515;
-  padding-bottom: 12px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .manju-group-head p {
-  margin: 0 0 4px;
-  font-size: 12px;
+  margin: 0 0 2px;
+  font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.14em;
 }
 
 .manju-group-head h2 {
   margin: 0;
-  font-size: clamp(20px, 3vw, 30px);
-  line-height: 1.15;
+  font-size: clamp(15px, 2vw, 20px);
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .manju-group-head > span {
   flex: 0 0 auto;
   border: 2px solid #151515;
   background: #ddfbff;
-  padding: 5px 10px;
-  font-size: 12px;
+  padding: 4px 8px;
+  font-size: 11px;
   font-weight: 900;
 }
 
 .manju-group-message {
-  margin-top: 12px;
+  grid-column: 1 / -1;
   border: 2px solid #151515;
-  padding: 9px 10px;
-  font-size: 13px;
+  padding: 6px 8px;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -1073,11 +1079,23 @@ button {
   background: #ffd2eb;
 }
 
-.manju-group-current p,
-.manju-group-create p {
-  margin: 12px 0;
+.manju-group-current {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.manju-group-current-main {
+  min-width: 0;
+}
+
+.manju-group-current p {
+  margin: 5px 0 0;
   color: rgba(21, 21, 21, 0.72);
-  line-height: 1.55;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .manju-group-members,
@@ -1085,53 +1103,40 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
 }
 
 .manju-group-members span {
   border: 2px solid #151515;
   background: #ffe7fa;
-  padding: 5px 9px;
+  padding: 4px 8px;
   font-size: 12px;
   font-weight: 900;
 }
 
 .manju-group-create-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: minmax(150px, 1fr) auto auto;
+  gap: 8px;
 }
 
 .manju-group-create-row input {
   width: 100%;
-  min-height: 42px;
+  min-height: 36px;
   border: 2px solid #151515;
   background: #fff;
   color: #151515;
   padding: 0 12px;
 }
 
-.manju-group-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.manju-group-toolbar span {
-  color: rgba(21, 21, 21, 0.66);
-  font-size: 12px;
-  font-weight: 900;
-}
-
 .manju-group-widget button {
-  min-height: 40px;
+  min-height: 36px;
   border: 2px solid #151515;
   background: #a8f27a;
   color: #151515;
-  padding: 0 12px;
+  padding: 0 10px;
+  font-size: 12px;
   font-weight: 900;
-  box-shadow: 3px 3px 0 #151515;
+  box-shadow: 2px 2px 0 #151515;
 }
 
 .manju-group-widget button:disabled {
@@ -1148,17 +1153,20 @@ button {
 }
 
 .manju-group-list {
-  flex-direction: column;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px;
 }
 
 .manju-group-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   border: 2px solid #151515;
   background: #fffef5;
-  padding: 10px;
+  padding: 7px 8px;
 }
 
 .manju-group-item div {
@@ -1210,10 +1218,14 @@ button {
     width: 100%;
   }
 
+  .manju-group-widget {
+    grid-template-columns: 1fr;
+  }
+
   .manju-group-head,
   .manju-group-item,
-  .manju-group-create-row,
-  .manju-group-toolbar {
+  .manju-group-current,
+  .manju-group-create-row {
     grid-template-columns: 1fr;
     flex-direction: column;
     align-items: stretch;

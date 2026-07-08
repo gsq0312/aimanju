@@ -107,30 +107,29 @@ export default function ManjuGroupWidget({ onChanged }) {
           <p>AI漫剧小组</p>
           <h2>{myGroup ? myGroup.name : '个人或小组都可以提交'}</h2>
         </div>
-        <span>{loading ? '加载中' : myGroup ? '小组作品' : '个人作品可直接上墙'}</span>
+        <span>{loading ? '加载中' : myGroup ? '小组作品' : '未加入小组'}</span>
       </div>
 
       {message.text && <div className={`manju-group-message ${message.type}`}>{message.text}</div>}
 
       {myGroup ? (
         <div className="manju-group-current">
-          <div className="manju-group-members">
-            {myGroup.members.map((member) => (
-              <span key={member.user_id}>{member.name}{member.role === 'leader' ? ' · 组长' : ''}</span>
-            ))}
+          <div className="manju-group-current-main">
+            <div className="manju-group-members">
+              {myGroup.members.map((member) => (
+                <span key={member.user_id}>{member.name}{member.role === 'leader' ? ' · 组长' : ''}</span>
+              ))}
+            </div>
+            <p>
+              {myGroup.has_work ? '已有上墙作品' : '组长统一添加上墙作品'}
+            </p>
           </div>
-          <p>
-            {myGroup.has_work
-              ? '当前小组已有上墙作品，后续添加会继续显示在同一张小组作品卡片里。'
-              : '你的小组还没有上墙作品，最后由组长统一添加到作品墙。'}
-          </p>
           <button type="button" className="manju-group-secondary" onClick={handleLeave} disabled={workingId === 'leave'}>
             {workingId === 'leave' ? '退出中...' : '退出小组'}
           </button>
         </div>
       ) : (
         <div className="manju-group-create">
-          <p>不加入小组也可以直接添加个人作品；加入小组后，上墙会变成小组作品。</p>
           <div className="manju-group-create-row">
             <input
               type="text"
@@ -141,12 +140,9 @@ export default function ManjuGroupWidget({ onChanged }) {
             <button type="button" onClick={handleCreate} disabled={workingId === 'create'}>
               {workingId === 'create' ? '创建中...' : '创建小组'}
             </button>
-          </div>
-          <div className="manju-group-toolbar">
             <button type="button" className="manju-group-refresh" onClick={refresh} disabled={loading}>
-              {loading ? '刷新中...' : '刷新小组列表'}
+              {loading ? '刷新中...' : '刷新列表'}
             </button>
-            <span>同学新建小组后，点刷新就能看到本班最新小组。</span>
           </div>
         </div>
       )}
