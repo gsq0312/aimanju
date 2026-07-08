@@ -735,7 +735,7 @@ def update_manju_project(project_id: int, data: ManjuProjectUpdate, user: sqlite
         assignments = ", ".join(f"{key} = ?" for key in fields)
         values = list(fields.values()) + [project_id]
         cursor = conn.execute(
-            """
+            f"""
             UPDATE projects
             SET {assignments}
             WHERE id = ?
