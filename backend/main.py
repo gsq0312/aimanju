@@ -728,13 +728,21 @@ async def submit_wall_work(
     work_url = normalize_text(video_url)
     if not work_title or not work_url:
         raise HTTPException(status_code=400, detail="请填写作品名称和作品链接")
+    with db_conn() as conn:
+        my_group = current_group_row(conn, int(user["id"]))
+        group_id = my_group["id"] if my_group else None
+        if group_id:
+            membership = conn.execute(
+                "SELECT role FROM student_group_members WHERE group_id = ? AND user_id = ?",
+                (group_id, user["id"]),
+            ).fetchone()
+            if not membership or membership["role"] != "leader":
+                raise HTTPException(status_code=403, detail="请组长统一提交小组作品")
     cover_url = None
     if cover and cover.filename:
         cover_url = (await save_upload(cover, user, "wall-cover"))["url"]
     timestamp = now_iso()
     with db_conn() as conn:
-        my_group = current_group_row(conn, int(user["id"]))
-        group_id = my_group["id"] if my_group else None
         cursor = conn.execute(
             """
             INSERT INTO wall_works (user_id, group_id, title, video_url, cover_url, created_at, updated_at)

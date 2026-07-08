@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from './AuthContext.jsx'
-import { auth as authApi, gallery as galleryApi, projects as projectApi, resolveApiAssetUrl, wallWorks as wallWorksApi } from './api'
+import { auth as authApi, gallery as galleryApi, groups as groupsApi, projects as projectApi, resolveApiAssetUrl, wallWorks as wallWorksApi } from './api'
 import AiManjuGuide from './components/AiManjuGuide.jsx'
 import AiManjuStudio from './components/AiManjuStudio.jsx'
 import ExcellentWorks from './components/ExcellentWorks.jsx'
@@ -186,6 +186,7 @@ export default function App() {
   const [wallSubmitting, setWallSubmitting] = useState(false)
   const [wallMessage, setWallMessage] = useState('')
   const [wallError, setWallError] = useState('')
+  const [groupStatus, setGroupStatus] = useState(null)
 
   const openAuth = (mode) => {
     setAuthMode(mode)
@@ -219,10 +220,21 @@ export default function App() {
     setWallWorkItems(data || [])
   }
 
+  const reloadGroupStatus = async () => {
+    if (!user) {
+      setGroupStatus(null)
+      return null
+    }
+    const data = await groupsApi.status().catch(() => null)
+    setGroupStatus(data)
+    return data
+  }
+
   useEffect(() => {
     reloadProjects()
     reloadGallery()
     reloadWallWorks()
+    reloadGroupStatus()
     const handler = (event) => {
       const savedProject = event?.detail?.project
       if (savedProject?.id) {
@@ -232,6 +244,7 @@ export default function App() {
       reloadProjects()
       reloadGallery()
       reloadWallWorks()
+      reloadGroupStatus()
     }
     window.addEventListener('ai-manju-projects-changed', handler)
     return () => window.removeEventListener('ai-manju-projects-changed', handler)
@@ -290,6 +303,18 @@ export default function App() {
   }, [activeClass, galleryItems])
 
   const studioKey = useMemo(() => selectedProject?.id || selectedProject?.resetToken || 'new', [selectedProject])
+  const myGroup = groupStatus?.my_group || null
+  const myGroupMember = myGroup?.members?.find((member) => member.user_id === user?.id) || null
+  const isGroupMember = Boolean(myGroup)
+  const isGroupLeader = myGroupMember?.role === 'leader'
+  const canSubmitWallWork = !isGroupMember || isGroupLeader
+
+  const handleGroupChanged = () => {
+    reloadProjects()
+    reloadGallery()
+    reloadWallWorks()
+    reloadGroupStatus()
+  }
 
   const createDraft = () => {
     setSelectedProject({
@@ -301,7 +326,7 @@ export default function App() {
 
   const openWallSubmit = () => {
     setWallMessage('')
-    setWallError('')
+    setWallError(canSubmitWallWork ? '' : '请组长统一提交小组作品')
     setActiveView('wallSubmit')
   }
 
@@ -404,11 +429,21 @@ export default function App() {
           <>
             <div className="manju-wall-head">
               <h2>我的上墙</h2>
-              <button type="button" onClick={openWallSubmit}>+</button>
+              <button
+                type="button"
+                className={!canSubmitWallWork ? 'is-locked' : ''}
+                onClick={openWallSubmit}
+              >
+                +
+              </button>
             </div>
-            <button type="button" className="manju-wall-submit-shortcut" onClick={openWallSubmit}>
-              <strong>添加上墙作品</strong>
-              <span>名称 / 链接 / 封面</span>
+            <button
+              type="button"
+              className={`manju-wall-submit-shortcut ${!canSubmitWallWork ? 'is-locked' : ''}`}
+              onClick={openWallSubmit}
+            >
+              <strong>{canSubmitWallWork ? '添加上墙作品' : '组长统一上墙'}</strong>
+              <span>{canSubmitWallWork ? '名称 / 链接 / 封面' : '组员把最终链接交给组长'}</span>
             </button>
             {wallWorkItems.length > 0 && (
               <div className="manju-wall-mini-list">
@@ -442,7 +477,7 @@ export default function App() {
       <main className="manju-main">
         {activeView === 'studio' ? (
           <>
-            {user && <ManjuGroupWidget onChanged={() => { reloadProjects(); reloadGallery() }} />}
+            {user && <ManjuGroupWidget onChanged={handleGroupChanged} />}
             <AiManjuStudio key={studioKey} projectId={selectedProject?.id || null} projectData={selectedProject?.id ? selectedProject : null} />
           </>
         ) : activeView === 'guide' ? (
@@ -451,7 +486,7 @@ export default function App() {
           <ExcellentWorks />
         ) : activeView === 'wallSubmit' && user ? (
           <section className="manju-wall-submit">
-            <ManjuGroupWidget onChanged={() => { reloadProjects(); reloadGallery(); reloadWallWorks() }} />
+            <ManjuGroupWidget onChanged={handleGroupChanged} />
             <div className="manju-wall-submit-panel">
               <div className="manju-wall-submit-head">
                 <div>
@@ -461,6 +496,13 @@ export default function App() {
                 <button type="button" onClick={() => setActiveView('gallery')}>看作品墙</button>
               </div>
 
+              {!canSubmitWallWork ? (
+                <div className="manju-wall-leader-only">
+                  <strong>请组长统一提交小组作品</strong>
+                  <p>组员可以继续各自创作，选出最终视频后，把作品链接、标题和封面交给组长添加到作品墙。</p>
+                  <button type="button" onClick={() => setActiveView('studio')}>返回创作</button>
+                </div>
+              ) : (
               <form className="manju-wall-form" onSubmit={submitWallWork}>
                 <label>
                   <span>作品名称</span>
@@ -498,6 +540,7 @@ export default function App() {
                   </button>
                 </div>
               </form>
+              )}
             </div>
           </section>
         ) : !user ? (

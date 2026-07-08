@@ -122,7 +122,7 @@ export default function ManjuGroupWidget({ onChanged }) {
           <p>
             {myGroup.has_work
               ? '当前小组已有上墙作品，后续添加会继续显示在同一张小组作品卡片里。'
-              : '你的小组还没有上墙作品，添加后作品墙会显示为小组作品。'}
+              : '你的小组还没有上墙作品，最后由组长统一添加到作品墙。'}
           </p>
           <button type="button" className="manju-group-secondary" onClick={handleLeave} disabled={workingId === 'leave'}>
             {workingId === 'leave' ? '退出中...' : '退出小组'}
