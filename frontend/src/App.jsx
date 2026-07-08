@@ -419,8 +419,8 @@ export default function App() {
                 setActiveView('studio')
               }}
             >
-              <strong>{project.scope === 'group' ? `【${project.group_name || '小组'}】${project.title}` : project.title}</strong>
-              <span>{project.scope === 'group' ? '小组 · ' : ''}{formatDate(project.updated_at)}</span>
+              <strong>{project.scope === 'group' ? `【小组最终稿】${project.title}` : project.title}</strong>
+              <span>{project.scope === 'group' ? `${project.group_name || '小组'} · ` : '个人草稿 · '}{formatDate(project.updated_at)}</span>
             </button>
           ))}
         </div>
@@ -478,7 +478,14 @@ export default function App() {
         {activeView === 'studio' ? (
           <>
             {user && <ManjuGroupWidget onChanged={handleGroupChanged} />}
-            <AiManjuStudio key={studioKey} projectId={selectedProject?.id || null} projectData={selectedProject?.id ? selectedProject : null} />
+            <AiManjuStudio
+              key={studioKey}
+              projectId={selectedProject?.id || null}
+              projectData={selectedProject?.id ? selectedProject : null}
+              isGroupMember={isGroupMember}
+              isGroupLeader={isGroupLeader}
+              groupName={myGroup?.name || ''}
+            />
           </>
         ) : activeView === 'guide' ? (
           <AiManjuGuide />

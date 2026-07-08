@@ -757,7 +757,13 @@ function getInitialDraft() {
   }
 }
 
-export default function AiManjuStudio({ projectId = null, projectData = null }) {
+export default function AiManjuStudio({
+  projectId = null,
+  projectData = null,
+  isGroupMember = false,
+  isGroupLeader = false,
+  groupName = '',
+}) {
   const { switchToAiManjuStudio } = useWorkspace();
 
   const initialDraft = getInitialDraft();
@@ -794,6 +800,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
   const [promptStreamText, setPromptStreamText] = useState(initialDraft.promptStreamText);
   const [currentProjectId, setCurrentProjectId] = useState(projectId);
   const [currentProjectTitle, setCurrentProjectTitle] = useState(projectData?.title || '');
+  const [currentProjectScope, setCurrentProjectScope] = useState(projectData?.scope || 'personal');
   const [saveTitle, setSaveTitle] = useState(projectData?.title || '');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [projectSaving, setProjectSaving] = useState(false);
@@ -968,6 +975,9 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
     return storyTitle ? `AI漫剧｜${storyTitle}` : '未命名AI漫剧';
   };
 
+  const isCurrentGroupProject = currentProjectScope === 'group';
+  const canEditCurrentProject = !isCurrentGroupProject || isGroupLeader;
+
   useEffect(() => {
     if (!availableLocations.includes(selectedLocation)) {
       setSelectedLocation(availableLocations[0]);
@@ -982,6 +992,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
         applyDraftToState(createEmptyDraft());
         setCurrentProjectId(null);
         setCurrentProjectTitle('');
+        setCurrentProjectScope('personal');
         setSaveTitle('');
         setProjectLoadedKey(nextKey);
         try {
@@ -995,6 +1006,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
       if (!projectId) {
         setCurrentProjectId(null);
         setCurrentProjectTitle('');
+        setCurrentProjectScope('personal');
         setSaveTitle('');
         return;
       }
@@ -1006,6 +1018,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
         applyDraftToState(fullProject.manju_data || {});
         setCurrentProjectId(fullProject.id);
         setCurrentProjectTitle(fullProject.title || '');
+        setCurrentProjectScope(fullProject.scope || 'personal');
         setSaveTitle(fullProject.title || '');
         setProjectLoadedKey(nextKey);
       } catch (error) {
@@ -1312,6 +1325,10 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
   };
 
   const saveExistingProject = async () => {
+    if (isCurrentGroupProject && !isGroupLeader) {
+      setProjectSaveError('小组最终稿由组长保存，组员可以查看和复制。');
+      return;
+    }
     if (!currentProjectId) {
       setSaveTitle(getDefaultProjectTitle());
       setShowSaveModal(true);
@@ -1326,11 +1343,37 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
         manju_data: buildCurrentManjuData()
       });
       setCurrentProjectTitle(saved.title || '');
+      setCurrentProjectScope(saved.scope || 'personal');
       setSaveTitle(saved.title || '');
       switchToAiManjuStudio(saved);
       window.dispatchEvent(new CustomEvent('ai-manju-projects-changed', { detail: { project: saved } }));
     } catch (error) {
       setProjectSaveError(error.message || '保存失败，请稍后重试');
+    } finally {
+      setProjectSaving(false);
+    }
+  };
+
+  const saveGroupFinalProject = async () => {
+    if (!isGroupLeader) {
+      setProjectSaveError('只有组长可以保存小组最终稿。');
+      return;
+    }
+    setProjectSaving(true);
+    setProjectSaveError('');
+    try {
+      const saved = await projectApi.saveGroupFinal(
+        currentProjectTitle || saveTitle || getDefaultProjectTitle(),
+        buildCurrentManjuData()
+      );
+      setCurrentProjectId(saved.id);
+      setCurrentProjectTitle(saved.title || '');
+      setCurrentProjectScope(saved.scope || 'group');
+      setSaveTitle(saved.title || '');
+      switchToAiManjuStudio(saved);
+      window.dispatchEvent(new CustomEvent('ai-manju-projects-changed', { detail: { project: saved } }));
+    } catch (error) {
+      setProjectSaveError(error.message || '保存小组最终稿失败，请稍后重试');
     } finally {
       setProjectSaving(false);
     }
@@ -1349,6 +1392,7 @@ export default function AiManjuStudio({ projectId = null, projectData = null }) 
       const saved = await projectApi.createManju(title, buildCurrentManjuData());
       setCurrentProjectId(saved.id);
       setCurrentProjectTitle(saved.title || '');
+      setCurrentProjectScope(saved.scope || 'personal');
       setSaveTitle(saved.title || '');
       setShowSaveModal(false);
       switchToAiManjuStudio(saved);
@@ -2282,18 +2326,45 @@ ${segmentIndex === 0 ? `首帧提示词：${segment.startPrompt}` : `首帧来�
                 <div className="ai-manju-hero-side">
                     <div className="ai-manju-project-actions">
                         <span className="ai-manju-project-title">
-                            {currentProjectId ? currentProjectTitle || '已保存作品' : '未保存作品'}
+                            {isCurrentGroupProject
+                              ? `小组最终稿：${currentProjectTitle || '未命名AI漫剧'}`
+                              : currentProjectId ? currentProjectTitle || '已保存作品' : '未保存作品'}
                         </span>
                         <button
               type="button"
               className="ai-manju-primary-btn"
               onClick={saveExistingProject}
-              disabled={projectSaving}>
+              disabled={projectSaving || !canEditCurrentProject}>
               
-                            {projectSaving ? '保存中…' : currentProjectId ? '保存修改' : '保存作品'}
+                            {projectSaving
+                              ? '保存中…'
+                              : isCurrentGroupProject
+                                ? isGroupLeader ? '更新小组最终稿' : '小组最终稿只读'
+                                : currentProjectId ? '保存修改' : '保存作品'}
                         </button>
+                        {isGroupLeader && !isCurrentGroupProject && (
+                          <button
+                            type="button"
+                            className="ai-manju-ghost-btn ai-manju-group-final-btn"
+                            onClick={saveGroupFinalProject}
+                            disabled={projectSaving}
+                          >
+                            {projectSaving ? '保存中…' : '保存为小组最终稿'}
+                          </button>
+                        )}
                     </div>
                     {projectSaveError && <p className="ai-manju-error">{projectSaveError}</p>}
+                    {isGroupMember && (
+                      <p className="ai-manju-group-final-note">
+                        {isCurrentGroupProject
+                          ? isGroupLeader
+                            ? `当前是${groupName || '本组'}最终稿，组长可以继续更新。`
+                            : `当前是${groupName || '本组'}最终稿，组员可以查看和复制。`
+                          : isGroupLeader
+                            ? '普通保存是个人草稿；定稿后点“保存为小组最终稿”。'
+                            : '普通保存是个人草稿；小组最终稿由组长统一保存。'}
+                      </p>
+                    )}
                     <div className="ai-manju-tag-cloud">
                         <span>{'4分30秒总片'}</span>
                         <span>{'10秒一段'}</span>

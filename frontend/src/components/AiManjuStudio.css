@@ -152,6 +152,26 @@
     white-space: nowrap;
 }
 
+.ai-manju-group-final-btn {
+    min-height: 38px;
+    padding: 0.5rem 0.72rem;
+    font-size: 0.78rem;
+}
+
+.ai-manju-group-final-note {
+    max-width: 360px;
+    margin: 0;
+    padding: 0.42rem 0.62rem;
+    border: 2px solid var(--manju-ink);
+    background: var(--manju-blue);
+    box-shadow: 3px 3px 0 var(--manju-ink);
+    color: var(--manju-ink);
+    font-size: 0.76rem;
+    font-weight: 900;
+    line-height: 1.35;
+    text-align: left;
+}
+
 .ai-manju-hero-note {
     margin: 0;
     font-size: 0.84rem;

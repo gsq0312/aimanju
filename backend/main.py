@@ -360,10 +360,36 @@ def current_group_id(conn: sqlite3.Connection, user_id: int) -> Optional[int]:
     return int(row["id"]) if row else None
 
 
+def group_membership_row(conn: sqlite3.Connection, group_id: int, user_id: int) -> Optional[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM student_group_members WHERE group_id = ? AND user_id = ?",
+        (group_id, user_id),
+    ).fetchone()
+
+
+def is_group_leader(conn: sqlite3.Connection, group_id: int, user_id: int) -> bool:
+    membership = group_membership_row(conn, group_id, user_id)
+    return bool(membership and membership["role"] == "leader")
+
+
 def project_access_clause(user_id: int, group_id: Optional[int]) -> tuple[str, list[Any]]:
     if group_id:
         return "(projects.user_id = ? OR projects.group_id = ?)", [user_id, group_id]
     return "projects.user_id = ?", [user_id]
+
+
+def project_select_sql(where_sql: str) -> str:
+    return f"""
+        SELECT
+            projects.*,
+            users.name AS author_name,
+            users.student_id AS author_student_id,
+            student_groups.name AS group_name
+        FROM projects
+        JOIN users ON users.id = projects.user_id
+        LEFT JOIN student_groups ON student_groups.id = projects.group_id
+        WHERE {where_sql}
+    """
 
 
 @app.get("/api/health")
@@ -570,21 +596,31 @@ def leave_group(user: sqlite3.Row = Depends(get_current_user)) -> dict[str, Any]
 def list_manju_projects(user: sqlite3.Row = Depends(get_current_user)) -> list[dict[str, Any]]:
     with db_conn() as conn:
         group_id = current_group_id(conn, int(user["id"]))
-        access_sql, access_values = project_access_clause(int(user["id"]), group_id)
+        params: list[Any] = [int(user["id"])]
+        group_filter = ""
+        if group_id:
+            group_filter = """
+                OR projects.id = (
+                    SELECT id
+                    FROM projects
+                    WHERE project_type = 'ai_manju' AND group_id = ?
+                    ORDER BY updated_at DESC, id DESC
+                    LIMIT 1
+                )
+            """
+            params.append(group_id)
         rows = conn.execute(
-            f"""
-            SELECT
-                projects.*,
-                users.name AS author_name,
-                users.student_id AS author_student_id,
-                student_groups.name AS group_name
-            FROM projects
-            JOIN users ON users.id = projects.user_id
-            LEFT JOIN student_groups ON student_groups.id = projects.group_id
-            WHERE projects.project_type = 'ai_manju' AND {access_sql}
+            project_select_sql(f"""
+                projects.project_type = 'ai_manju'
+                AND (
+                    (projects.user_id = ? AND projects.group_id IS NULL)
+                    {group_filter}
+                )
+            """)
+            + """
             ORDER BY projects.updated_at DESC, projects.id DESC
             """,
-            access_values,
+            params,
         ).fetchall()
     return [project_payload(row) for row in rows]
 
@@ -594,16 +630,65 @@ def create_manju_project(data: ManjuProjectCreate, user: sqlite3.Row = Depends(g
     title = normalize_text(data.title) or "未命名AI漫剧"
     timestamp = now_iso()
     with db_conn() as conn:
-        my_group = current_group_row(conn, int(user["id"]))
-        group_id = my_group["id"] if my_group else None
         cursor = conn.execute(
             """
             INSERT INTO projects (user_id, group_id, title, description, project_type, manju_data, created_at, updated_at)
             VALUES (?, ?, ?, ?, 'ai_manju', ?, ?, ?)
             """,
-            (user["id"], group_id, title, "AI漫剧一键生成作品", json.dumps(data.manju_data, ensure_ascii=False), timestamp, timestamp),
+            (user["id"], None, title, "AI漫剧一键生成作品", json.dumps(data.manju_data, ensure_ascii=False), timestamp, timestamp),
         )
-        row = conn.execute("SELECT * FROM projects WHERE id = ?", (cursor.lastrowid,)).fetchone()
+        row = conn.execute(
+            project_select_sql("projects.id = ?"),
+            (cursor.lastrowid,),
+        ).fetchone()
+    return project_payload(row)
+
+
+@app.post("/api/projects/manju/group-final")
+def save_group_final_project(data: ManjuProjectCreate, user: sqlite3.Row = Depends(get_current_user)) -> dict[str, Any]:
+    title = normalize_text(data.title) or "未命名AI漫剧"
+    timestamp = now_iso()
+    with db_conn() as conn:
+        my_group = current_group_row(conn, int(user["id"]))
+        if not my_group:
+            raise HTTPException(status_code=400, detail="请先加入或创建小组")
+        group_id = int(my_group["id"])
+        if not is_group_leader(conn, group_id, int(user["id"])):
+            raise HTTPException(status_code=403, detail="只有组长可以保存小组最终稿")
+
+        existing = conn.execute(
+            """
+            SELECT id
+            FROM projects
+            WHERE project_type = 'ai_manju' AND group_id = ?
+            ORDER BY updated_at DESC, id DESC
+            LIMIT 1
+            """,
+            (group_id,),
+        ).fetchone()
+        if existing:
+            project_id = int(existing["id"])
+            conn.execute(
+                """
+                UPDATE projects
+                SET user_id = ?, title = ?, manju_data = ?, updated_at = ?
+                WHERE id = ? AND project_type = 'ai_manju'
+                """,
+                (user["id"], title, json.dumps(data.manju_data, ensure_ascii=False), timestamp, project_id),
+            )
+        else:
+            cursor = conn.execute(
+                """
+                INSERT INTO projects (user_id, group_id, title, description, project_type, manju_data, created_at, updated_at)
+                VALUES (?, ?, ?, ?, 'ai_manju', ?, ?, ?)
+                """,
+                (user["id"], group_id, title, "AI漫剧小组最终稿", json.dumps(data.manju_data, ensure_ascii=False), timestamp, timestamp),
+            )
+            project_id = int(cursor.lastrowid)
+        row = conn.execute(
+            project_select_sql("projects.id = ?"),
+            (project_id,),
+        ).fetchone()
     return project_payload(row)
 
 
@@ -613,19 +698,11 @@ def get_manju_project(project_id: int, user: sqlite3.Row = Depends(get_current_u
         group_id = current_group_id(conn, int(user["id"]))
         access_sql, access_values = project_access_clause(int(user["id"]), group_id)
         row = conn.execute(
-            f"""
-            SELECT
-                projects.*,
-                users.name AS author_name,
-                users.student_id AS author_student_id,
-                student_groups.name AS group_name
-            FROM projects
-            JOIN users ON users.id = projects.user_id
-            LEFT JOIN student_groups ON student_groups.id = projects.group_id
-            WHERE projects.id = ?
+            project_select_sql(f"""
+              projects.id = ?
               AND projects.project_type = 'ai_manju'
               AND {access_sql}
-            """,
+            """),
             [project_id, *access_values],
         ).fetchone()
     if not row:
@@ -642,35 +719,34 @@ def update_manju_project(project_id: int, data: ManjuProjectUpdate, user: sqlite
         fields["manju_data"] = json.dumps(data.manju_data, ensure_ascii=False)
 
     with db_conn() as conn:
-        group_id = current_group_id(conn, int(user["id"]))
-        fields["group_id"] = group_id
+        existing = conn.execute(
+            "SELECT * FROM projects WHERE id = ? AND project_type = 'ai_manju'",
+            (project_id,),
+        ).fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="作品不存在")
+        existing_group_id = existing["group_id"]
+        if existing_group_id:
+            if not is_group_leader(conn, int(existing_group_id), int(user["id"])):
+                raise HTTPException(status_code=403, detail="只有组长可以修改小组最终稿")
+        elif int(existing["user_id"]) != int(user["id"]):
+            raise HTTPException(status_code=404, detail="作品不存在")
+
         assignments = ", ".join(f"{key} = ?" for key in fields)
-        access_sql, access_values = project_access_clause(int(user["id"]), group_id)
-        values = list(fields.values()) + [project_id, *access_values]
+        values = list(fields.values()) + [project_id]
         cursor = conn.execute(
-            f"""
+            """
             UPDATE projects
             SET {assignments}
             WHERE id = ?
               AND project_type = 'ai_manju'
-              AND {access_sql}
             """,
             values,
         )
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="作品不存在")
         row = conn.execute(
-            """
-            SELECT
-                projects.*,
-                users.name AS author_name,
-                users.student_id AS author_student_id,
-                student_groups.name AS group_name
-            FROM projects
-            JOIN users ON users.id = projects.user_id
-            LEFT JOIN student_groups ON student_groups.id = projects.group_id
-            WHERE projects.id = ?
-            """,
+            project_select_sql("projects.id = ?"),
             (project_id,),
         ).fetchone()
     return project_payload(row)

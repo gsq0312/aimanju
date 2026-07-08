@@ -78,6 +78,8 @@ export const projects = {
   listManju: () => request('/api/projects/manju'),
   createManju: (title, manjuData) =>
     request('/api/projects/manju', { method: 'POST', body: JSON.stringify({ title, manju_data: manjuData || {} }) }),
+  saveGroupFinal: (title, manjuData) =>
+    request('/api/projects/manju/group-final', { method: 'POST', body: JSON.stringify({ title, manju_data: manjuData || {} }) }),
   getManju: (id) => request(`/api/projects/manju/${id}`),
   updateManju: (id, data) => request(`/api/projects/manju/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => request(`/api/projects/${id}`, { method: 'DELETE' }),
