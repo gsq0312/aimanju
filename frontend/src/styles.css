@@ -1019,6 +1019,7 @@ button {
 }
 
 .manju-group-widget {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(190px, 0.6fr) minmax(0, 1fr);
   align-items: center;
@@ -1064,7 +1065,11 @@ button {
 }
 
 .manju-group-message {
-  grid-column: 1 / -1;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 3;
+  max-width: min(360px, 100%);
   border: 2px solid #151515;
   padding: 6px 8px;
   font-size: 12px;
