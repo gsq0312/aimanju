@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import shutil
 import sqlite3
@@ -11,6 +12,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional
+from urllib.parse import urlsplit
 
 import httpx
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
@@ -30,6 +32,7 @@ AI_API_BASE = os.getenv("AIMANJU_AI_API_BASE") or os.getenv("AI_API_BASE") or "h
 AI_API_KEY = os.getenv("AIMANJU_DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_API_KEY") or os.getenv("AI_API_KEY")
 AI_MODEL = os.getenv("AIMANJU_AI_MODEL") or os.getenv("AI_MODEL") or "deepseek-chat"
 AI_TIMEOUT_SECONDS = float(os.getenv("AIMANJU_AI_TIMEOUT_SECONDS", "120"))
+URL_PATTERN = re.compile(r"https?://[^\s<>'\"，。；、]+", re.IGNORECASE)
 ALLOWED_REGISTER_CLASSES = [
     "24电商01班",
     "24电商02班",
@@ -139,6 +142,13 @@ def init_db() -> None:
         project_columns = {row["name"] for row in conn.execute("PRAGMA table_info(projects)").fetchall()}
         if "group_id" not in project_columns:
             conn.execute("ALTER TABLE projects ADD COLUMN group_id INTEGER REFERENCES student_groups(id) ON DELETE SET NULL")
+        wall_columns = {row["name"] for row in conn.execute("PRAGMA table_info(wall_works)").fetchall()}
+        if "original_video_url" not in wall_columns:
+            conn.execute("ALTER TABLE wall_works ADD COLUMN original_video_url TEXT")
+        if "link_status" not in wall_columns:
+            conn.execute("ALTER TABLE wall_works ADD COLUMN link_status TEXT NOT NULL DEFAULT 'ok'")
+        if "link_message" not in wall_columns:
+            conn.execute("ALTER TABLE wall_works ADD COLUMN link_message TEXT")
 
 
 init_db()
@@ -146,6 +156,47 @@ init_db()
 
 def normalize_text(value: Optional[str]) -> str:
     return (value or "").strip()
+
+
+def extract_first_url(value: str) -> str:
+    match = URL_PATTERN.search(value or "")
+    if not match:
+        return ""
+    url = match.group(0).rstrip(").,，。；;、！!？?】]")
+    parsed = urlsplit(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
+    return url
+
+
+def normalize_wall_work_url(value: str) -> tuple[str, Optional[str], str, Optional[str]]:
+    raw = normalize_text(value)
+    clean_url = extract_first_url(raw)
+    if not clean_url:
+        return "", raw or None, "invalid", "作品链接格式错误"
+    if clean_url != raw:
+        return clean_url, raw, "normalized", "已自动提取作品链接"
+    return clean_url, None, "ok", None
+
+
+def wall_work_link_payload(row: sqlite3.Row) -> dict[str, Any]:
+    keys = set(row.keys())
+    video_url = row["video_url"]
+    original_url = row["original_video_url"] if "original_video_url" in keys else None
+    link_status = row["link_status"] if "link_status" in keys else "ok"
+    link_message = row["link_message"] if "link_message" in keys else None
+    if not extract_first_url(video_url):
+        link_status = "invalid"
+        link_message = link_message or "作品链接格式错误"
+    elif link_status != "invalid" and original_url and normalize_text(original_url) != normalize_text(video_url):
+        link_status = "normalized"
+        link_message = link_message or "已自动提取作品链接"
+    return {
+        "video_url": video_url,
+        "original_video_url": original_url,
+        "link_status": link_status,
+        "link_message": link_message,
+    }
 
 
 def hash_password(password: str) -> str:
@@ -785,11 +836,11 @@ def my_wall_works(user: sqlite3.Row = Depends(get_current_user)) -> list[dict[st
         {
             "id": row["id"],
             "title": row["title"],
-            "video_url": row["video_url"],
             "cover_url": row["cover_url"],
             "group_id": row["group_id"],
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
+            **wall_work_link_payload(row),
         }
         for row in rows
     ]
@@ -803,9 +854,12 @@ async def submit_wall_work(
     user: sqlite3.Row = Depends(get_current_user),
 ) -> dict[str, Any]:
     work_title = normalize_text(title)
-    work_url = normalize_text(video_url)
-    if not work_title or not work_url:
+    raw_work_url = normalize_text(video_url)
+    work_url, original_url, link_status, link_message = normalize_wall_work_url(raw_work_url)
+    if not work_title or not raw_work_url:
         raise HTTPException(status_code=400, detail="请填写作品名称和作品链接")
+    if not work_url:
+        raise HTTPException(status_code=400, detail="请粘贴包含 http/https 的作品链接")
     with db_conn() as conn:
         my_group = current_group_row(conn, int(user["id"]))
         group_id = my_group["id"] if my_group else None
@@ -823,20 +877,22 @@ async def submit_wall_work(
     with db_conn() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO wall_works (user_id, group_id, title, video_url, cover_url, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO wall_works (
+                user_id, group_id, title, video_url, original_video_url, link_status, link_message, cover_url, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (user["id"], group_id, work_title, work_url, cover_url, timestamp, timestamp),
+            (user["id"], group_id, work_title, work_url, original_url, link_status, link_message, cover_url, timestamp, timestamp),
         )
         row = conn.execute("SELECT * FROM wall_works WHERE id = ?", (cursor.lastrowid,)).fetchone()
     return {
         "id": row["id"],
         "title": row["title"],
-        "video_url": row["video_url"],
         "cover_url": row["cover_url"],
         "group_id": row["group_id"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
+        **wall_work_link_payload(row),
     }
 
 
@@ -880,12 +936,12 @@ def manju_gallery(user: sqlite3.Row = Depends(get_current_user)) -> list[dict[st
             "student_id": row["student_id"],
             "user_student_id": row["student_id"],
             "class_name": row["group_class_name"] or row["user_class_name"],
-            "video_url": row["video_url"],
             "cover_url": row["cover_url"],
             "item_number": "AI漫剧",
             "like_count": 0,
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
+            **wall_work_link_payload(row),
         }
         for row in rows
     ]

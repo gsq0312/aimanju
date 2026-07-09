@@ -803,6 +803,11 @@ button {
   text-decoration: none;
 }
 
+.manju-gallery-work-item.is-invalid {
+  border-color: #c62828;
+  background: #fff5f5;
+}
+
 .manju-gallery-work-cover {
   aspect-ratio: 16 / 10;
   border: 2px solid #151515;
@@ -846,6 +851,36 @@ button {
   font-size: 12px;
   line-height: 1.35;
   white-space: nowrap;
+}
+
+.manju-gallery-link-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.manju-gallery-link-note.warn {
+  color: #8a5a00;
+}
+
+.manju-gallery-link-note.error {
+  color: #c62828;
+}
+
+.manju-wall-link-note {
+  margin: -6px 0 4px;
+  color: #8a5a00;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.manju-wall-link-note.error {
+  color: #c62828;
 }
 
 .manju-gallery-empty {

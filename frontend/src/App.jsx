@@ -22,6 +22,30 @@ function formatDate(value) {
   return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
+function formatDateTime(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+}
+
+function extractFirstUrl(value) {
+  const match = String(value || '').match(/https?:\/\/[^\s<>'"，。；、]+/i)
+  return match ? match[0].replace(/[).,，。；;、！!？?】\]]+$/, '') : ''
+}
+
+function wallLinkNote(work) {
+  if (work.link_status === 'invalid') return { type: 'error', text: work.link_message || '链接疑似失效' }
+  if (work.link_status === 'normalized') return { type: 'warn', text: work.link_message || '已自动提取作品链接' }
+  return null
+}
+
 function AuthDialog({ initialMode, onClose, classOptions }) {
   const { login, register } = useAuth()
   const [mode, setMode] = useState(initialMode || 'login')
@@ -302,6 +326,15 @@ export default function App() {
     }))
   }, [activeClass, galleryItems])
 
+  const wallUrlNote = useMemo(() => {
+    const raw = wallUrl.trim()
+    if (!raw) return ''
+    const extracted = extractFirstUrl(raw)
+    if (!extracted) return '没有识别到 http/https 链接，请粘贴作品分享链接。'
+    if (extracted !== raw) return `检测到分享文案，提交时会自动使用：${extracted}`
+    return ''
+  }, [wallUrl])
+
   const studioKey = useMemo(() => selectedProject?.id || selectedProject?.resetToken || 'new', [selectedProject])
   const myGroup = groupStatus?.my_group || null
   const myGroupMember = myGroup?.members?.find((member) => member.user_id === user?.id) || null
@@ -525,10 +558,11 @@ export default function App() {
                   <input
                     value={wallUrl}
                     onChange={(event) => setWallUrl(event.target.value)}
-                    placeholder="https://..."
+                    placeholder="可粘贴抖音 / B站 / 快手 / 小红书分享链接或整段分享文案"
                     inputMode="url"
                   />
                 </label>
+                {wallUrlNote && <p className={`manju-wall-link-note ${extractFirstUrl(wallUrl) ? '' : 'error'}`}>{wallUrlNote}</p>}
                 <label>
                   <span>作品封面</span>
                   <input
@@ -584,7 +618,7 @@ export default function App() {
                     </div>
                     <div className="manju-gallery-work-list">
                       {card.works.map((work, index) => (
-                        <a key={work.id} href={work.video_url} target="_blank" rel="noreferrer" className="manju-gallery-work-item">
+                        <a key={work.id} href={work.video_url || '#'} target="_blank" rel="noreferrer" className={`manju-gallery-work-item ${work.link_status === 'invalid' ? 'is-invalid' : ''}`}>
                           <div className="manju-gallery-work-cover">
                             {work.cover_url ? (
                               <img src={resolveApiAssetUrl(work.cover_url)} alt={work.title || 'cover'} loading="lazy" />
@@ -594,7 +628,12 @@ export default function App() {
                           </div>
                           <div>
                             <strong>{work.title || `作品 ${index + 1}`}</strong>
-                            <span>{work.item_number || 'AI漫剧'} · {formatDate(work.updated_at)}</span>
+                            <span>{work.item_number || 'AI漫剧'} · 提交：{formatDateTime(work.created_at) || formatDate(work.created_at)}</span>
+                            {wallLinkNote(work) && (
+                              <small className={`manju-gallery-link-note ${wallLinkNote(work).type}`}>
+                                {wallLinkNote(work).text}
+                              </small>
+                            )}
                           </div>
                         </a>
                       ))}
