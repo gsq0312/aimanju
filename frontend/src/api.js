@@ -53,6 +53,7 @@ export async function uploadForm(path, formData, method = 'POST') {
     localStorage.removeItem('aimanju_token')
     throw new Error(await parseError(res, '请登录后使用'))
   }
+  if (res.status === 413) throw new Error('图片太大，请换一张较小的图片，或先截图后再上传')
   if (!res.ok) throw new Error(await parseError(res, '上传失败，请重试'))
   return res.json()
 }

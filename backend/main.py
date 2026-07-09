@@ -33,6 +33,7 @@ AI_API_KEY = os.getenv("AIMANJU_DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_API_KE
 AI_MODEL = os.getenv("AIMANJU_AI_MODEL") or os.getenv("AI_MODEL") or "deepseek-chat"
 AI_TIMEOUT_SECONDS = float(os.getenv("AIMANJU_AI_TIMEOUT_SECONDS", "120"))
 URL_PATTERN = re.compile(r"https?://[^\s<>'\"，。；、]+", re.IGNORECASE)
+MAX_UPLOAD_BYTES = int(os.getenv("AIMANJU_MAX_UPLOAD_BYTES", str(40 * 1024 * 1024)))
 ALLOWED_REGISTER_CLASSES = [
     "24电商01班",
     "24电商02班",
@@ -1026,8 +1027,8 @@ def manju_gallery(user: sqlite3.Row = Depends(get_current_user)) -> list[dict[st
 
 def validate_upload(file: UploadFile) -> str:
     suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
-        raise HTTPException(status_code=400, detail="仅支持 JPG、PNG、GIF、WEBP 图片")
+    if suffix not in {".jpg", ".jpeg", ".jfif", ".png", ".gif", ".webp"}:
+        raise HTTPException(status_code=400, detail="仅支持 JPG、PNG、GIF、WEBP 图片；HEIC 请先截图或转成 JPG")
     return ".jpg" if suffix == ".jpeg" else suffix
 
 
@@ -1037,6 +1038,11 @@ async def save_upload(file: UploadFile, user: sqlite3.Row, prefix: str) -> dict[
     user_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{prefix}-{secrets.token_hex(12)}{suffix}"
     path = user_dir / filename
+    file.file.seek(0, os.SEEK_END)
+    size = file.file.tell()
+    file.file.seek(0)
+    if size > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="图片太大，请压缩或截图后再上传")
     with path.open("wb") as target:
         shutil.copyfileobj(file.file, target)
     return {"url": f"/api/uploads/manju/{user['id']}/{filename}"}

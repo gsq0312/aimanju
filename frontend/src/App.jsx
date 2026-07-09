@@ -15,6 +15,10 @@ const emptyForm = {
   confirmPassword: '',
 }
 
+const WALL_COVER_MAX_EDGE = 960
+const WALL_COVER_TARGET_BYTES = 900 * 1024
+const SUPPORTED_WALL_COVER_EXTENSIONS = /\.(jpe?g|jfif|png|webp|gif)$/i
+
 function formatDate(value) {
   if (!value) return ''
   const date = new Date(value)
@@ -44,6 +48,63 @@ function wallLinkNote(work) {
   if (work.link_status === 'invalid') return { type: 'error', text: work.link_message || '链接疑似失效' }
   if (work.link_status === 'normalized') return { type: 'warn', text: work.link_message || '已自动提取作品链接' }
   return null
+}
+
+function isSupportedWallCover(file) {
+  if (!file) return true
+  return /^image\/(jpeg|png|webp|gif)$/i.test(file.type || '') || SUPPORTED_WALL_COVER_EXTENSIONS.test(file.name || '')
+}
+
+function loadImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+    image.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve(image)
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('这张图片浏览器不能识别，请换 JPG / PNG / WebP，或先截图后上传'))
+    }
+    image.src = url
+  })
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob)
+      else reject(new Error('图片压缩失败，请换一张图片再试'))
+    }, type, quality)
+  })
+}
+
+async function prepareWallCover(file) {
+  if (!file) return null
+  if (!isSupportedWallCover(file)) {
+    throw new Error('封面只支持 JPG、PNG、WebP、GIF。手机 HEIC 图片请先截图或转成 JPG 再上传')
+  }
+  if (file.size <= WALL_COVER_TARGET_BYTES && /^image\/(jpeg|png|webp)$/i.test(file.type || '')) {
+    return file
+  }
+
+  const image = await loadImageFile(file)
+  const scale = Math.min(1, WALL_COVER_MAX_EDGE / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height))
+  const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale))
+  const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const context = canvas.getContext('2d')
+  context.fillStyle = '#fffef5'
+  context.fillRect(0, 0, width, height)
+  context.drawImage(image, 0, 0, width, height)
+
+  let blob = await canvasToBlob(canvas, 'image/jpeg', 0.82)
+  if (blob.size > WALL_COVER_TARGET_BYTES) blob = await canvasToBlob(canvas, 'image/jpeg', 0.72)
+  if (blob.size > WALL_COVER_TARGET_BYTES) blob = await canvasToBlob(canvas, 'image/jpeg', 0.62)
+  return new File([blob], `${(file.name || 'wall-cover').replace(/\.[^.]+$/, '')}-compressed.jpg`, { type: 'image/jpeg' })
 }
 
 function AuthDialog({ initialMode, onClose, classOptions }) {
@@ -391,10 +452,12 @@ export default function App() {
     }
     setWallSubmitting(true)
     try {
+      if (wallCover) setWallMessage('正在压缩并上传封面，请稍等...')
+      const coverFile = await prepareWallCover(wallCover)
       if (editingWallWork?.id) {
-        await wallWorksApi.update(editingWallWork.id, title, videoUrl, wallCover)
+        await wallWorksApi.update(editingWallWork.id, title, videoUrl, coverFile)
       } else {
-        await wallWorksApi.create(title, videoUrl, wallCover)
+        await wallWorksApi.create(title, videoUrl, coverFile)
       }
       setEditingWallWork(null)
       setWallTitle('')
@@ -612,12 +675,22 @@ export default function App() {
                   <span>作品封面</span>
                   <input
                     type="file"
-                    accept="image/*"
-                    onChange={(event) => setWallCover(event.target.files?.[0] || null)}
+                    accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null
+                      setWallError('')
+                      if (file && !isSupportedWallCover(file)) {
+                        setWallCover(null)
+                        event.target.value = ''
+                        setWallError('封面只支持 JPG、PNG、WebP、GIF。手机 HEIC 图片请先截图或转成 JPG 再上传')
+                        return
+                      }
+                      setWallCover(file)
+                    }}
                   />
                 </label>
                 {editingWallWork?.cover_url && !wallCover && <p className="manju-wall-file-name">不重新选择封面时，将保留原封面。</p>}
-                {wallCover && <p className="manju-wall-file-name">{wallCover.name}</p>}
+                {wallCover && <p className="manju-wall-file-name">{wallCover.name}，提交时会自动压缩封面。</p>}
                 {wallError && <p className="manju-wall-error">{wallError}</p>}
                 {wallMessage && <p className="manju-wall-message">{wallMessage}</p>}
                 <div className="manju-wall-actions">
