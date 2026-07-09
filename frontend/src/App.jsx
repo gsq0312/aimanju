@@ -15,8 +15,8 @@ const emptyForm = {
   confirmPassword: '',
 }
 
-const WALL_COVER_MAX_EDGE = 960
-const WALL_COVER_TARGET_BYTES = 900 * 1024
+const WALL_COVER_MAX_EDGE = 640
+const WALL_COVER_TARGET_BYTES = 220 * 1024
 const SUPPORTED_WALL_COVER_EXTENSIONS = /\.(jpe?g|jfif|png|webp|gif)$/i
 
 function formatDate(value) {
@@ -85,10 +85,6 @@ async function prepareWallCover(file) {
   if (!isSupportedWallCover(file)) {
     throw new Error('封面只支持 JPG、PNG、WebP、GIF。手机 HEIC 图片请先截图或转成 JPG 再上传')
   }
-  if (file.size <= WALL_COVER_TARGET_BYTES && /^image\/(jpeg|png|webp)$/i.test(file.type || '')) {
-    return file
-  }
-
   const image = await loadImageFile(file)
   const scale = Math.min(1, WALL_COVER_MAX_EDGE / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height))
   const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale))
@@ -101,9 +97,10 @@ async function prepareWallCover(file) {
   context.fillRect(0, 0, width, height)
   context.drawImage(image, 0, 0, width, height)
 
-  let blob = await canvasToBlob(canvas, 'image/jpeg', 0.82)
-  if (blob.size > WALL_COVER_TARGET_BYTES) blob = await canvasToBlob(canvas, 'image/jpeg', 0.72)
+  let blob = await canvasToBlob(canvas, 'image/jpeg', 0.74)
   if (blob.size > WALL_COVER_TARGET_BYTES) blob = await canvasToBlob(canvas, 'image/jpeg', 0.62)
+  if (blob.size > WALL_COVER_TARGET_BYTES) blob = await canvasToBlob(canvas, 'image/jpeg', 0.5)
+  if (blob.size > WALL_COVER_TARGET_BYTES) blob = await canvasToBlob(canvas, 'image/jpeg', 0.42)
   return new File([blob], `${(file.name || 'wall-cover').replace(/\.[^.]+$/, '')}-compressed.jpg`, { type: 'image/jpeg' })
 }
 
@@ -690,7 +687,7 @@ export default function App() {
                   />
                 </label>
                 {editingWallWork?.cover_url && !wallCover && <p className="manju-wall-file-name">不重新选择封面时，将保留原封面。</p>}
-                {wallCover && <p className="manju-wall-file-name">{wallCover.name}，提交时会自动压缩封面。</p>}
+                {wallCover && <p className="manju-wall-file-name">{wallCover.name}，提交时会自动压缩成小封面。</p>}
                 {wallError && <p className="manju-wall-error">{wallError}</p>}
                 {wallMessage && <p className="manju-wall-message">{wallMessage}</p>}
                 <div className="manju-wall-actions">
