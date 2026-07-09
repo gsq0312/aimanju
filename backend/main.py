@@ -149,6 +149,8 @@ def init_db() -> None:
             conn.execute("ALTER TABLE wall_works ADD COLUMN link_status TEXT NOT NULL DEFAULT 'ok'")
         if "link_message" not in wall_columns:
             conn.execute("ALTER TABLE wall_works ADD COLUMN link_message TEXT")
+        if "is_hidden" not in wall_columns:
+            conn.execute("ALTER TABLE wall_works ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0")
 
 
 init_db()
@@ -196,6 +198,26 @@ def wall_work_link_payload(row: sqlite3.Row) -> dict[str, Any]:
         "original_video_url": original_url,
         "link_status": link_status,
         "link_message": link_message,
+    }
+
+
+def can_manage_wall_work(conn: sqlite3.Connection, row: sqlite3.Row, user_id: int) -> bool:
+    group_id = row["group_id"]
+    if group_id:
+        return is_group_leader(conn, int(group_id), int(user_id))
+    return int(row["user_id"]) == int(user_id)
+
+
+def wall_work_payload(row: sqlite3.Row, can_manage: bool = False) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "cover_url": row["cover_url"],
+        "group_id": row["group_id"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "can_manage": can_manage,
+        **wall_work_link_payload(row),
     }
 
 
@@ -827,23 +849,12 @@ def my_wall_works(user: sqlite3.Row = Depends(get_current_user)) -> list[dict[st
             f"""
             SELECT *
             FROM wall_works
-            WHERE {wall_access_sql}
+            WHERE is_hidden = 0 AND {wall_access_sql}
             ORDER BY updated_at DESC, id DESC
             """,
             access_values,
         ).fetchall()
-    return [
-        {
-            "id": row["id"],
-            "title": row["title"],
-            "cover_url": row["cover_url"],
-            "group_id": row["group_id"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-            **wall_work_link_payload(row),
-        }
-        for row in rows
-    ]
+        return [wall_work_payload(row, can_manage_wall_work(conn, row, int(user["id"]))) for row in rows]
 
 
 @app.post("/api/manju/wall-works")
@@ -885,15 +896,79 @@ async def submit_wall_work(
             (user["id"], group_id, work_title, work_url, original_url, link_status, link_message, cover_url, timestamp, timestamp),
         )
         row = conn.execute("SELECT * FROM wall_works WHERE id = ?", (cursor.lastrowid,)).fetchone()
-    return {
-        "id": row["id"],
-        "title": row["title"],
-        "cover_url": row["cover_url"],
-        "group_id": row["group_id"],
-        "created_at": row["created_at"],
-        "updated_at": row["updated_at"],
-        **wall_work_link_payload(row),
+        can_manage = can_manage_wall_work(conn, row, int(user["id"]))
+    return wall_work_payload(row, can_manage)
+
+
+@app.put("/api/manju/wall-works/{work_id}")
+async def update_wall_work(
+    work_id: int,
+    title: str = Form(...),
+    video_url: str = Form(...),
+    cover: Optional[UploadFile] = File(default=None),
+    user: sqlite3.Row = Depends(get_current_user),
+) -> dict[str, Any]:
+    work_title = normalize_text(title)
+    raw_work_url = normalize_text(video_url)
+    work_url, original_url, link_status, link_message = normalize_wall_work_url(raw_work_url)
+    if not work_title or not raw_work_url:
+        raise HTTPException(status_code=400, detail="请填写作品名称和作品链接")
+    if not work_url:
+        raise HTTPException(status_code=400, detail="请粘贴包含 http/https 的作品链接")
+
+    with db_conn() as conn:
+        existing = conn.execute(
+            "SELECT * FROM wall_works WHERE id = ? AND is_hidden = 0",
+            (work_id,),
+        ).fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="作品不存在")
+        if not can_manage_wall_work(conn, existing, int(user["id"])):
+            raise HTTPException(status_code=403, detail="只能编辑自己或本组作品")
+
+    cover_url = None
+    if cover and cover.filename:
+        cover_url = (await save_upload(cover, user, "wall-cover"))["url"]
+
+    timestamp = now_iso()
+    fields: dict[str, Any] = {
+        "title": work_title,
+        "video_url": work_url,
+        "original_video_url": original_url,
+        "link_status": link_status,
+        "link_message": link_message,
+        "updated_at": timestamp,
     }
+    if cover_url:
+        fields["cover_url"] = cover_url
+
+    with db_conn() as conn:
+        assignments = ", ".join(f"{key} = ?" for key in fields)
+        conn.execute(
+            f"UPDATE wall_works SET {assignments} WHERE id = ?",
+            [*fields.values(), work_id],
+        )
+        row = conn.execute("SELECT * FROM wall_works WHERE id = ?", (work_id,)).fetchone()
+        can_manage = can_manage_wall_work(conn, row, int(user["id"]))
+    return wall_work_payload(row, can_manage)
+
+
+@app.delete("/api/manju/wall-works/{work_id}")
+def delete_wall_work(work_id: int, user: sqlite3.Row = Depends(get_current_user)) -> dict[str, str]:
+    with db_conn() as conn:
+        existing = conn.execute(
+            "SELECT * FROM wall_works WHERE id = ? AND is_hidden = 0",
+            (work_id,),
+        ).fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="作品不存在")
+        if not can_manage_wall_work(conn, existing, int(user["id"])):
+            raise HTTPException(status_code=403, detail="只能删除自己或本组作品")
+        conn.execute(
+            "UPDATE wall_works SET is_hidden = 1, updated_at = ? WHERE id = ?",
+            (now_iso(), work_id),
+        )
+    return {"message": "deleted"}
 
 
 @app.get("/api/manju/gallery")
@@ -918,33 +993,35 @@ def manju_gallery(user: sqlite3.Row = Depends(get_current_user)) -> list[dict[st
             FROM wall_works
             JOIN users ON users.id = wall_works.user_id
             LEFT JOIN student_groups ON student_groups.id = wall_works.group_id
+            WHERE wall_works.is_hidden = 0
             ORDER BY wall_works.updated_at DESC, wall_works.id DESC
             LIMIT 120
             """
         ).fetchall()
-    return [
-        {
-            "id": row["id"],
-            "work_id": row["id"],
-            "title": row["title"],
-            "card_type": "group" if row["group_id"] else "individual",
-            "group_id": row["group_id"],
-            "group_name": row["group_name"],
-            "group_members": [item for item in (row["group_members_text"] or "").split("、") if item],
-            "author_name": row["author_name"],
-            "student_name": row["author_name"],
-            "student_id": row["student_id"],
-            "user_student_id": row["student_id"],
-            "class_name": row["group_class_name"] or row["user_class_name"],
-            "cover_url": row["cover_url"],
-            "item_number": "AI漫剧",
-            "like_count": 0,
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-            **wall_work_link_payload(row),
-        }
-        for row in rows
-    ]
+        return [
+            {
+                "id": row["id"],
+                "work_id": row["id"],
+                "title": row["title"],
+                "card_type": "group" if row["group_id"] else "individual",
+                "group_id": row["group_id"],
+                "group_name": row["group_name"],
+                "group_members": [item for item in (row["group_members_text"] or "").split("、") if item],
+                "author_name": row["author_name"],
+                "student_name": row["author_name"],
+                "student_id": row["student_id"],
+                "user_student_id": row["student_id"],
+                "class_name": row["group_class_name"] or row["user_class_name"],
+                "cover_url": row["cover_url"],
+                "item_number": "AI漫剧",
+                "like_count": 0,
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+                "can_manage": can_manage_wall_work(conn, row, int(user["id"])),
+                **wall_work_link_payload(row),
+            }
+            for row in rows
+        ]
 
 
 def validate_upload(file: UploadFile) -> str:

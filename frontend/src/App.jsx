@@ -210,6 +210,7 @@ export default function App() {
   const [wallSubmitting, setWallSubmitting] = useState(false)
   const [wallMessage, setWallMessage] = useState('')
   const [wallError, setWallError] = useState('')
+  const [editingWallWork, setEditingWallWork] = useState(null)
   const [groupStatus, setGroupStatus] = useState(null)
 
   const openAuth = (mode) => {
@@ -341,6 +342,7 @@ export default function App() {
   const isGroupMember = Boolean(myGroup)
   const isGroupLeader = myGroupMember?.role === 'leader'
   const canSubmitWallWork = !isGroupMember || isGroupLeader
+  const canUseWallForm = canSubmitWallWork || Boolean(editingWallWork?.can_manage)
 
   const handleGroupChanged = () => {
     reloadProjects()
@@ -360,6 +362,20 @@ export default function App() {
   const openWallSubmit = () => {
     setWallMessage('')
     setWallError(canSubmitWallWork ? '' : '请组长统一提交小组作品')
+    setEditingWallWork(null)
+    setWallTitle('')
+    setWallUrl('')
+    setWallCover(null)
+    setActiveView('wallSubmit')
+  }
+
+  const openWallEdit = (work) => {
+    setWallMessage('')
+    setWallError('')
+    setEditingWallWork(work)
+    setWallTitle(work.title || '')
+    setWallUrl(work.original_video_url || work.video_url || '')
+    setWallCover(null)
     setActiveView('wallSubmit')
   }
 
@@ -375,11 +391,16 @@ export default function App() {
     }
     setWallSubmitting(true)
     try {
-      await wallWorksApi.create(title, videoUrl, wallCover)
+      if (editingWallWork?.id) {
+        await wallWorksApi.update(editingWallWork.id, title, videoUrl, wallCover)
+      } else {
+        await wallWorksApi.create(title, videoUrl, wallCover)
+      }
+      setEditingWallWork(null)
       setWallTitle('')
       setWallUrl('')
       setWallCover(null)
-      setWallMessage('已添加到作品墙。')
+      setWallMessage(editingWallWork?.id ? '作品已更新。' : '已添加到作品墙。')
       await reloadWallWorks()
       await reloadGallery()
       if (user?.class_name) setActiveClass(user.class_name)
@@ -388,6 +409,22 @@ export default function App() {
       setWallError(error.message || '添加失败，请重试。')
     } finally {
       setWallSubmitting(false)
+    }
+  }
+
+  const deleteWallWork = async (work) => {
+    if (!work?.id) return
+    const ok = window.confirm(`确定删除「${work.title || '这个作品'}」吗？删除后作品墙不再显示。`)
+    if (!ok) return
+    setWallError('')
+    setWallMessage('')
+    try {
+      await wallWorksApi.delete(work.id)
+      await reloadWallWorks()
+      await reloadGallery()
+      setWallMessage('作品已删除。')
+    } catch (error) {
+      setWallError(error.message || '删除失败，请重试。')
     }
   }
 
@@ -531,12 +568,12 @@ export default function App() {
               <div className="manju-wall-submit-head">
                 <div>
                   <span>ADD TO WALL</span>
-                  <h2>添加上墙作品</h2>
+                  <h2>{editingWallWork ? '编辑上墙作品' : '添加上墙作品'}</h2>
                 </div>
                 <button type="button" onClick={() => setActiveView('gallery')}>看作品墙</button>
               </div>
 
-              {!canSubmitWallWork ? (
+              {!canUseWallForm ? (
                 <div className="manju-wall-leader-only">
                   <strong>请组长统一提交小组作品</strong>
                   <p>组员可以继续各自创作，选出最终视频后，把作品链接、标题和封面交给组长添加到作品墙。</p>
@@ -571,13 +608,14 @@ export default function App() {
                     onChange={(event) => setWallCover(event.target.files?.[0] || null)}
                   />
                 </label>
+                {editingWallWork?.cover_url && !wallCover && <p className="manju-wall-file-name">不重新选择封面时，将保留原封面。</p>}
                 {wallCover && <p className="manju-wall-file-name">{wallCover.name}</p>}
                 {wallError && <p className="manju-wall-error">{wallError}</p>}
                 {wallMessage && <p className="manju-wall-message">{wallMessage}</p>}
                 <div className="manju-wall-actions">
                   <button type="button" onClick={() => setActiveView('studio')}>返回创作</button>
                   <button type="submit" disabled={wallSubmitting}>
-                    {wallSubmitting ? '添加中...' : '添加上墙'}
+                    {wallSubmitting ? '保存中...' : editingWallWork ? '保存修改' : '添加上墙'}
                   </button>
                 </div>
               </form>
@@ -617,26 +655,38 @@ export default function App() {
                       <p>{card.subtitle}</p>
                     </div>
                     <div className="manju-gallery-work-list">
-                      {card.works.map((work, index) => (
-                        <a key={work.id} href={work.video_url || '#'} target="_blank" rel="noreferrer" className={`manju-gallery-work-item ${work.link_status === 'invalid' ? 'is-invalid' : ''}`}>
-                          <div className="manju-gallery-work-cover">
-                            {work.cover_url ? (
-                              <img src={resolveApiAssetUrl(work.cover_url)} alt={work.title || 'cover'} loading="lazy" />
-                            ) : (
-                              <span>AI漫剧</span>
+                      {card.works.map((work, index) => {
+                        const note = wallLinkNote(work)
+                        return (
+                          <article key={work.id} className={`manju-gallery-work-item ${work.link_status === 'invalid' ? 'is-invalid' : ''}`}>
+                            <a className="manju-gallery-work-open" href={work.video_url || '#'} target="_blank" rel="noreferrer">
+                              <div className="manju-gallery-work-cover">
+                                {work.cover_url ? (
+                                  <img src={resolveApiAssetUrl(work.cover_url)} alt={work.title || 'cover'} loading="lazy" />
+                                ) : (
+                                  <span>AI漫剧</span>
+                                )}
+                              </div>
+                              <div>
+                                <strong>{work.title || `作品 ${index + 1}`}</strong>
+                                <span>{work.item_number || 'AI漫剧'} · 提交：{formatDateTime(work.created_at) || formatDate(work.created_at)}</span>
+                                {note && (
+                                  <small className={`manju-gallery-link-note ${note.type}`}>
+                                    {note.text}
+                                  </small>
+                                )}
+                              </div>
+                            </a>
+                            {work.can_manage && (
+                              <div className="manju-gallery-work-actions">
+                                <a href={work.video_url || '#'} target="_blank" rel="noreferrer">打开</a>
+                                <button type="button" onClick={() => openWallEdit(work)}>编辑</button>
+                                <button type="button" className="danger" onClick={() => deleteWallWork(work)}>删除</button>
+                              </div>
                             )}
-                          </div>
-                          <div>
-                            <strong>{work.title || `作品 ${index + 1}`}</strong>
-                            <span>{work.item_number || 'AI漫剧'} · 提交：{formatDateTime(work.created_at) || formatDate(work.created_at)}</span>
-                            {wallLinkNote(work) && (
-                              <small className={`manju-gallery-link-note ${wallLinkNote(work).type}`}>
-                                {wallLinkNote(work).text}
-                              </small>
-                            )}
-                          </div>
-                        </a>
-                      ))}
+                          </article>
+                        )
+                      })}
                     </div>
                   </div>
                 </article>

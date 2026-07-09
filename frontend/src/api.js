@@ -44,11 +44,11 @@ export async function request(path, options = {}) {
   return res.json()
 }
 
-export async function uploadForm(path, formData) {
+export async function uploadForm(path, formData, method = 'POST') {
   const token = getToken()
   const headers = {}
   if (token) headers.Authorization = `Bearer ${token}`
-  const res = await fetch(resolveApiPath(path), { method: 'POST', body: formData, headers })
+  const res = await fetch(resolveApiPath(path), { method, body: formData, headers })
   if (res.status === 401) {
     localStorage.removeItem('aimanju_token')
     throw new Error(await parseError(res, '请登录后使用'))
@@ -98,6 +98,14 @@ export const wallWorks = {
     if (coverFile) form.append('cover', coverFile)
     return uploadForm('/api/manju/wall-works', form)
   },
+  update: (id, title, videoUrl, coverFile) => {
+    const form = new FormData()
+    form.append('title', title)
+    form.append('video_url', videoUrl)
+    if (coverFile) form.append('cover', coverFile)
+    return uploadForm(`/api/manju/wall-works/${id}`, form, 'PUT')
+  },
+  delete: (id) => request(`/api/manju/wall-works/${id}`, { method: 'DELETE' }),
 }
 
 export const groups = {
