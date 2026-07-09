@@ -518,7 +518,15 @@ export default function App() {
             {wallWorkItems.length > 0 && (
               <div className="manju-wall-mini-list">
                 {wallWorkItems.slice(0, 3).map((work) => (
-                  <a key={work.id} href={work.video_url} target="_blank" rel="noreferrer">{work.title}</a>
+                  <div key={work.id} className="manju-wall-mini-item">
+                    <a href={work.video_url || '#'} target="_blank" rel="noreferrer">{work.title}</a>
+                    {work.can_manage && (
+                      <div className="manju-wall-mini-actions">
+                        <button type="button" onClick={() => openWallEdit(work)}>编辑</button>
+                        <button type="button" className="danger" onClick={() => deleteWallWork(work)}>删除</button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
