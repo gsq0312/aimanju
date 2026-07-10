@@ -42,6 +42,10 @@ ALLOWED_REGISTER_CLASSES = [
     "24级市场营销02班",
 ]
 DEFAULT_MAX_GROUP_MEMBERS = 4
+CLASS_MAX_GROUP_MEMBERS = {
+    "24级市场营销01班": 5,
+    "24级市场营销02班": 5,
+}
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -159,6 +163,10 @@ init_db()
 
 def normalize_text(value: Optional[str]) -> str:
     return (value or "").strip()
+
+
+def max_group_members_for_class(class_name: str) -> int:
+    return CLASS_MAX_GROUP_MEMBERS.get(normalize_text(class_name), DEFAULT_MAX_GROUP_MEMBERS)
 
 
 def extract_first_url(value: str) -> str:
@@ -600,7 +608,7 @@ def create_group(data: GroupCreateRequest, user: sqlite3.Row = Depends(get_curre
                 INSERT INTO student_groups (class_name, name, created_by_user_id, max_members, is_locked, created_at, updated_at)
                 VALUES (?, ?, ?, ?, 0, ?, ?)
                 """,
-                (class_name, group_name, user["id"], DEFAULT_MAX_GROUP_MEMBERS, timestamp, timestamp),
+                (class_name, group_name, user["id"], max_group_members_for_class(class_name), timestamp, timestamp),
             )
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="本班已存在同名小组")
