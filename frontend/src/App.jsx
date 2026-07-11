@@ -270,6 +270,10 @@ export default function App() {
   const [wallError, setWallError] = useState('')
   const [editingWallWork, setEditingWallWork] = useState(null)
   const [groupStatus, setGroupStatus] = useState(null)
+  const [galleryMessage, setGalleryMessage] = useState('')
+  const [galleryError, setGalleryError] = useState('')
+  const [commentEditor, setCommentEditor] = useState(null)
+  const [feedbackWorkingId, setFeedbackWorkingId] = useState('')
 
   const openAuth = (mode) => {
     setAuthMode(mode)
@@ -401,6 +405,7 @@ export default function App() {
   const isGroupLeader = myGroupMember?.role === 'leader'
   const canSubmitWallWork = !isGroupMember || isGroupLeader
   const canUseWallForm = canSubmitWallWork || Boolean(editingWallWork?.can_manage)
+  const isTeacher = user?.role === 'teacher'
 
   const handleGroupChanged = () => {
     reloadProjects()
@@ -485,6 +490,94 @@ export default function App() {
       setWallMessage('作品已删除。')
     } catch (error) {
       setWallError(error.message || '删除失败，请重试。')
+    }
+  }
+
+  const reloadGalleryWithMessage = async (message) => {
+    await reloadGallery()
+    setGalleryMessage(message)
+  }
+
+  const toggleWallLike = async (work) => {
+    if (!work?.id) return
+    setGalleryError('')
+    setGalleryMessage('')
+    setFeedbackWorkingId(`like-${work.id}`)
+    try {
+      if (work.liked_by_me) {
+        await wallWorksApi.unlike(work.id)
+        await reloadGalleryWithMessage('已取消点赞。')
+      } else {
+        await wallWorksApi.like(work.id)
+        await reloadGalleryWithMessage(isTeacher ? '已教师点赞。' : '已点赞。')
+      }
+    } catch (error) {
+      setGalleryError(error.message || '点赞失败，请重试。')
+    } finally {
+      setFeedbackWorkingId('')
+    }
+  }
+
+  const openCommentEditor = (work, comment = null) => {
+    setGalleryError('')
+    setGalleryMessage('')
+    setCommentEditor({ workId: work.id, commentId: comment?.id || null, content: comment?.content || '' })
+  }
+
+  const saveTeacherComment = async (work) => {
+    const content = commentEditor?.content?.trim() || ''
+    if (!content) {
+      setGalleryError('请填写教师评语。')
+      return
+    }
+    setGalleryError('')
+    setGalleryMessage('')
+    setFeedbackWorkingId(`comment-${work.id}`)
+    try {
+      if (commentEditor.commentId) {
+        await wallWorksApi.updateComment(commentEditor.commentId, content)
+        await reloadGalleryWithMessage('教师评语已更新。')
+      } else {
+        await wallWorksApi.createComment(work.id, content)
+        await reloadGalleryWithMessage('教师评语已发布。')
+      }
+      setCommentEditor(null)
+    } catch (error) {
+      setGalleryError(error.message || '保存教师评语失败。')
+    } finally {
+      setFeedbackWorkingId('')
+    }
+  }
+
+  const deleteTeacherComment = async (comment) => {
+    if (!window.confirm('确定删除这条教师评语吗？')) return
+    setGalleryError('')
+    setGalleryMessage('')
+    setFeedbackWorkingId(`delete-comment-${comment.id}`)
+    try {
+      await wallWorksApi.deleteComment(comment.id)
+      await reloadGalleryWithMessage('教师评语已删除。')
+    } catch (error) {
+      setGalleryError(error.message || '删除教师评语失败。')
+    } finally {
+      setFeedbackWorkingId('')
+    }
+  }
+
+  const toggleTeacherLinkStatus = async (work) => {
+    const expired = work.teacher_link_status !== 'expired'
+    const prompt = expired ? '标记后会在作品下显示“教师标记：链接已失效”。确认继续吗？' : '确认撤销链接失效标记吗？'
+    if (!window.confirm(prompt)) return
+    setGalleryError('')
+    setGalleryMessage('')
+    setFeedbackWorkingId(`link-${work.id}`)
+    try {
+      await wallWorksApi.setLinkStatus(work.id, expired)
+      await reloadGalleryWithMessage(expired ? '已标记链接失效。' : '已恢复为未标记状态。')
+    } catch (error) {
+      setGalleryError(error.message || '更新链接状态失败。')
+    } finally {
+      setFeedbackWorkingId('')
     }
   }
 
@@ -736,7 +829,7 @@ export default function App() {
                       {card.works.map((work, index) => {
                         const note = wallLinkNote(work)
                         return (
-                          <article key={work.id} className={`manju-gallery-work-item ${work.link_status === 'invalid' ? 'is-invalid' : ''}`}>
+                          <article key={work.id} className={`manju-gallery-work-item ${work.link_status === 'invalid' ? 'is-invalid' : ''} ${work.teacher_link_status === 'expired' ? 'is-teacher-expired' : ''}`}>
                             <a className="manju-gallery-work-open" href={work.video_url || '#'} target="_blank" rel="noreferrer">
                               <div className="manju-gallery-work-cover">
                                 {work.cover_url ? (
@@ -753,8 +846,87 @@ export default function App() {
                                     {note.text}
                                   </small>
                                 )}
+                                {work.teacher_link_status === 'expired' && (
+                                  <small className="manju-gallery-link-note teacher-expired">教师标记：链接已失效</small>
+                                )}
                               </div>
                             </a>
+                            <div className="manju-gallery-feedback-bar">
+                              {isTeacher ? (
+                                <>
+                                  <span>同学点赞 {work.student_like_count || 0}</span>
+                                  <button
+                                    type="button"
+                                    className={work.liked_by_me ? 'is-active' : ''}
+                                    onClick={() => toggleWallLike(work)}
+                                    disabled={feedbackWorkingId === `like-${work.id}`}
+                                  >
+                                    {work.liked_by_me ? '已教师点赞' : '教师点赞'} {work.teacher_like_count || 0}
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className={work.liked_by_me ? 'is-active' : ''}
+                                    onClick={() => toggleWallLike(work)}
+                                    disabled={feedbackWorkingId === `like-${work.id}`}
+                                  >
+                                    {work.liked_by_me ? '已点赞' : '同学点赞'} {work.student_like_count || 0}
+                                  </button>
+                                  <span>教师点赞 {work.teacher_like_count || 0}</span>
+                                </>
+                              )}
+                            </div>
+                            {(work.comments || []).length > 0 && (
+                              <div className="manju-gallery-teacher-comments">
+                                {work.comments.map((comment) => (
+                                  <div key={comment.id} className="manju-gallery-teacher-comment">
+                                    <div>
+                                      <strong>教师评语</strong>
+                                      <span>{formatDateTime(comment.updated_at) || formatDate(comment.updated_at)}</span>
+                                    </div>
+                                    <p>{comment.content}</p>
+                                    {isTeacher && comment.can_manage && (
+                                      <div className="manju-gallery-comment-actions">
+                                        <button type="button" onClick={() => openCommentEditor(work, comment)}>编辑评语</button>
+                                        <button type="button" className="danger" onClick={() => deleteTeacherComment(comment)} disabled={feedbackWorkingId === `delete-comment-${comment.id}`}>删除评语</button>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {isTeacher && (
+                              <div className="manju-gallery-teacher-tools">
+                                {commentEditor?.workId === work.id ? (
+                                  <>
+                                    <textarea
+                                      value={commentEditor.content}
+                                      onChange={(event) => setCommentEditor((current) => ({ ...current, content: event.target.value }))}
+                                      placeholder="填写教师评语"
+                                      maxLength={1000}
+                                    />
+                                    <div>
+                                      <button type="button" onClick={() => setCommentEditor(null)}>取消</button>
+                                      <button type="button" onClick={() => saveTeacherComment(work)} disabled={feedbackWorkingId === `comment-${work.id}`}>
+                                        {commentEditor.commentId ? '保存评语' : '发布评语'}
+                                      </button>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <button type="button" onClick={() => openCommentEditor(work)}>写教师评语</button>
+                                )}
+                                <button
+                                  type="button"
+                                  className={work.teacher_link_status === 'expired' ? 'danger' : ''}
+                                  onClick={() => toggleTeacherLinkStatus(work)}
+                                  disabled={feedbackWorkingId === `link-${work.id}`}
+                                >
+                                  {work.teacher_link_status === 'expired' ? '恢复有效' : '标记链接失效'}
+                                </button>
+                              </div>
+                            )}
                             {work.can_manage && (
                               <div className="manju-gallery-work-actions">
                                 <a href={work.video_url || '#'} target="_blank" rel="noreferrer">打开</a>
@@ -771,6 +943,8 @@ export default function App() {
               ))}
               {galleryCards.length === 0 && <div className="manju-gallery-empty">新系统还没有可展示的 AI漫剧作品。</div>}
             </div>
+            {galleryError && <p className="manju-gallery-feedback-message error">{galleryError}</p>}
+            {galleryMessage && <p className="manju-gallery-feedback-message">{galleryMessage}</p>}
           </section>
         )}
       </main>

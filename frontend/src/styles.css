@@ -839,6 +839,10 @@ button {
   background: #fff5f5;
 }
 
+.manju-gallery-work-item.is-teacher-expired {
+  border-color: #c62828;
+}
+
 .manju-gallery-work-cover {
   aspect-ratio: 16 / 10;
   border: 2px solid #151515;
@@ -926,6 +930,133 @@ button {
 
 .manju-gallery-link-note.error {
   color: #c62828;
+}
+
+.manju-gallery-link-note.teacher-expired {
+  color: #c62828;
+  font-weight: 900;
+}
+
+.manju-gallery-feedback-bar,
+.manju-gallery-teacher-tools,
+.manju-gallery-comment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.manju-gallery-feedback-bar {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(21, 21, 21, 0.18);
+}
+
+.manju-gallery-feedback-bar span {
+  display: inline-block;
+  margin: 0;
+  color: rgba(21, 21, 21, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: normal;
+}
+
+.manju-gallery-feedback-bar button,
+.manju-gallery-teacher-tools button,
+.manju-gallery-comment-actions button {
+  min-height: 29px;
+  border: 1px solid #151515;
+  background: #fffef5;
+  color: #151515;
+  padding: 3px 7px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.manju-gallery-feedback-bar button.is-active {
+  background: #a8f27a;
+}
+
+.manju-gallery-teacher-comments {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.manju-gallery-teacher-comment {
+  border-left: 3px solid #f7ce43;
+  background: #fff8d8;
+  padding: 7px 8px;
+}
+
+.manju-gallery-teacher-comment > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.manju-gallery-teacher-comment strong {
+  font-size: 12px;
+  white-space: normal;
+}
+
+.manju-gallery-teacher-comment span {
+  display: inline;
+  margin: 0;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.manju-gallery-teacher-comment p {
+  margin: 5px 0 0;
+  color: #151515;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.manju-gallery-comment-actions {
+  margin-top: 7px;
+}
+
+.manju-gallery-comment-actions button.danger,
+.manju-gallery-teacher-tools button.danger {
+  border-color: #c62828;
+  color: #c62828;
+}
+
+.manju-gallery-teacher-tools {
+  margin-top: 8px;
+}
+
+.manju-gallery-teacher-tools textarea {
+  width: 100%;
+  min-height: 70px;
+  resize: vertical;
+  border: 2px solid #151515;
+  background: #fffef5;
+  color: #151515;
+  padding: 7px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.manju-gallery-feedback-message {
+  margin: 14px 0 0;
+  border: 2px solid #151515;
+  background: #a8f27a;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.manju-gallery-feedback-message.error {
+  background: #ffd2eb;
+  color: #a11a3d;
 }
 
 .manju-wall-link-note {

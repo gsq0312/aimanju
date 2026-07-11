@@ -87,6 +87,7 @@ def init_db() -> None:
                 email TEXT NOT NULL UNIQUE,
                 student_id TEXT NOT NULL UNIQUE,
                 class_name TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'student',
                 password_hash TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
@@ -142,8 +143,33 @@ def init_db() -> None:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS wall_work_likes (
+                work_id INTEGER NOT NULL REFERENCES wall_works(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (work_id, user_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS wall_work_comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                work_id INTEGER NOT NULL REFERENCES wall_works(id) ON DELETE CASCADE,
+                teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS wall_work_teacher_link_marks (
+                work_id INTEGER PRIMARY KEY REFERENCES wall_works(id) ON DELETE CASCADE,
+                teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                marked_at TEXT NOT NULL
+            );
             """
         )
+        user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+        if "role" not in user_columns:
+            conn.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'student'")
         project_columns = {row["name"] for row in conn.execute("PRAGMA table_info(projects)").fetchall()}
         if "group_id" not in project_columns:
             conn.execute("ALTER TABLE projects ADD COLUMN group_id INTEGER REFERENCES student_groups(id) ON DELETE SET NULL")
@@ -217,6 +243,56 @@ def can_manage_wall_work(conn: sqlite3.Connection, row: sqlite3.Row, user_id: in
     return int(row["user_id"]) == int(user_id)
 
 
+def is_teacher(user: sqlite3.Row) -> bool:
+    return "role" in user.keys() and user["role"] == "teacher"
+
+
+def require_teacher(user: sqlite3.Row) -> None:
+    if not is_teacher(user):
+        raise HTTPException(status_code=403, detail="只有教师可以使用此功能")
+
+
+def get_visible_wall_work(conn: sqlite3.Connection, work_id: int) -> sqlite3.Row:
+    row = conn.execute(
+        "SELECT * FROM wall_works WHERE id = ? AND is_hidden = 0",
+        (work_id,),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    return row
+
+
+def wall_like_summary(conn: sqlite3.Connection, work_id: int, user_id: int) -> dict[str, Any]:
+    row = conn.execute(
+        """
+        SELECT
+            COUNT(CASE WHEN COALESCE(users.role, 'student') = 'student' THEN 1 END) AS student_like_count,
+            COUNT(CASE WHEN users.role = 'teacher' THEN 1 END) AS teacher_like_count,
+            MAX(CASE WHEN wall_work_likes.user_id = ? THEN 1 ELSE 0 END) AS liked_by_me
+        FROM wall_work_likes
+        JOIN users ON users.id = wall_work_likes.user_id
+        WHERE wall_work_likes.work_id = ?
+        """,
+        (user_id, work_id),
+    ).fetchone()
+    return {
+        "student_like_count": int(row["student_like_count"] or 0),
+        "teacher_like_count": int(row["teacher_like_count"] or 0),
+        "liked_by_me": bool(row["liked_by_me"]),
+    }
+
+
+def teacher_comment_payload(row: sqlite3.Row, user_id: int) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "work_id": row["work_id"],
+        "content": row["content"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "can_manage": int(row["teacher_id"]) == int(user_id),
+    }
+
+
 def wall_work_payload(row: sqlite3.Row, can_manage: bool = False) -> dict[str, Any]:
     return {
         "id": row["id"],
@@ -264,7 +340,7 @@ def user_payload(row: sqlite3.Row) -> dict[str, Any]:
         "email": row["email"],
         "student_id": row["student_id"],
         "class_name": row["class_name"],
-        "role": "student",
+        "role": row["role"] if "role" in row.keys() else "student",
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
@@ -315,6 +391,14 @@ class GroupCreateRequest(BaseModel):
 
 class GroupLeaderTransferRequest(BaseModel):
     user_id: int
+
+
+class WallCommentRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=1000)
+
+
+class WallLinkStatusRequest(BaseModel):
+    expired: bool
 
 
 class ManjuProjectCreate(BaseModel):
@@ -1026,6 +1110,112 @@ def delete_wall_work(work_id: int, user: sqlite3.Row = Depends(get_current_user)
     return {"message": "deleted"}
 
 
+@app.put("/api/manju/wall-works/{work_id}/like")
+def like_wall_work(work_id: int, user: sqlite3.Row = Depends(get_current_user)) -> dict[str, Any]:
+    with db_conn() as conn:
+        get_visible_wall_work(conn, work_id)
+        conn.execute(
+            "INSERT OR IGNORE INTO wall_work_likes (work_id, user_id, created_at) VALUES (?, ?, ?)",
+            (work_id, user["id"], now_iso()),
+        )
+        return {"liked": True, **wall_like_summary(conn, work_id, int(user["id"]))}
+
+
+@app.delete("/api/manju/wall-works/{work_id}/like")
+def unlike_wall_work(work_id: int, user: sqlite3.Row = Depends(get_current_user)) -> dict[str, Any]:
+    with db_conn() as conn:
+        get_visible_wall_work(conn, work_id)
+        conn.execute(
+            "DELETE FROM wall_work_likes WHERE work_id = ? AND user_id = ?",
+            (work_id, user["id"]),
+        )
+        return {"liked": False, **wall_like_summary(conn, work_id, int(user["id"]))}
+
+
+@app.post("/api/manju/wall-works/{work_id}/comments")
+def create_teacher_comment(
+    work_id: int,
+    data: WallCommentRequest,
+    user: sqlite3.Row = Depends(get_current_user),
+) -> dict[str, Any]:
+    require_teacher(user)
+    content = normalize_text(data.content)
+    if not content:
+        raise HTTPException(status_code=400, detail="请填写教师评语")
+    timestamp = now_iso()
+    with db_conn() as conn:
+        get_visible_wall_work(conn, work_id)
+        cursor = conn.execute(
+            """
+            INSERT INTO wall_work_comments (work_id, teacher_id, content, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (work_id, user["id"], content, timestamp, timestamp),
+        )
+        row = conn.execute("SELECT * FROM wall_work_comments WHERE id = ?", (cursor.lastrowid,)).fetchone()
+        return teacher_comment_payload(row, int(user["id"]))
+
+
+@app.put("/api/manju/wall-comments/{comment_id}")
+def update_teacher_comment(
+    comment_id: int,
+    data: WallCommentRequest,
+    user: sqlite3.Row = Depends(get_current_user),
+) -> dict[str, Any]:
+    require_teacher(user)
+    content = normalize_text(data.content)
+    if not content:
+        raise HTTPException(status_code=400, detail="请填写教师评语")
+    with db_conn() as conn:
+        existing = conn.execute("SELECT * FROM wall_work_comments WHERE id = ?", (comment_id,)).fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="教师评语不存在")
+        if int(existing["teacher_id"]) != int(user["id"]):
+            raise HTTPException(status_code=403, detail="只能修改自己的教师评语")
+        conn.execute(
+            "UPDATE wall_work_comments SET content = ?, updated_at = ? WHERE id = ?",
+            (content, now_iso(), comment_id),
+        )
+        row = conn.execute("SELECT * FROM wall_work_comments WHERE id = ?", (comment_id,)).fetchone()
+        return teacher_comment_payload(row, int(user["id"]))
+
+
+@app.delete("/api/manju/wall-comments/{comment_id}")
+def delete_teacher_comment(comment_id: int, user: sqlite3.Row = Depends(get_current_user)) -> dict[str, str]:
+    require_teacher(user)
+    with db_conn() as conn:
+        existing = conn.execute("SELECT * FROM wall_work_comments WHERE id = ?", (comment_id,)).fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="教师评语不存在")
+        if int(existing["teacher_id"]) != int(user["id"]):
+            raise HTTPException(status_code=403, detail="只能删除自己的教师评语")
+        conn.execute("DELETE FROM wall_work_comments WHERE id = ?", (comment_id,))
+    return {"message": "deleted"}
+
+
+@app.put("/api/manju/wall-works/{work_id}/link-status")
+def set_teacher_link_status(
+    work_id: int,
+    data: WallLinkStatusRequest,
+    user: sqlite3.Row = Depends(get_current_user),
+) -> dict[str, str]:
+    require_teacher(user)
+    with db_conn() as conn:
+        get_visible_wall_work(conn, work_id)
+        if data.expired:
+            conn.execute(
+                """
+                INSERT INTO wall_work_teacher_link_marks (work_id, teacher_id, marked_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(work_id) DO UPDATE SET teacher_id = excluded.teacher_id, marked_at = excluded.marked_at
+                """,
+                (work_id, user["id"], now_iso()),
+            )
+            return {"teacher_link_status": "expired"}
+        conn.execute("DELETE FROM wall_work_teacher_link_marks WHERE work_id = ?", (work_id,))
+        return {"teacher_link_status": "unknown"}
+
+
 @app.get("/api/manju/gallery")
 def manju_gallery(user: sqlite3.Row = Depends(get_current_user)) -> list[dict[str, Any]]:
     with db_conn() as conn:
@@ -1053,30 +1243,83 @@ def manju_gallery(user: sqlite3.Row = Depends(get_current_user)) -> list[dict[st
             LIMIT 120
             """
         ).fetchall()
-        return [
-            {
-                "id": row["id"],
-                "work_id": row["id"],
-                "title": row["title"],
-                "card_type": "group" if row["group_id"] else "individual",
-                "group_id": row["group_id"],
-                "group_name": row["group_name"],
-                "group_members": [item for item in (row["group_members_text"] or "").split("、") if item],
-                "author_name": row["author_name"],
-                "student_name": row["author_name"],
-                "student_id": row["student_id"],
-                "user_student_id": row["student_id"],
-                "class_name": row["group_class_name"] or row["user_class_name"],
-                "cover_url": row["cover_url"],
-                "item_number": "AI漫剧",
-                "like_count": 0,
-                "created_at": row["created_at"],
-                "updated_at": row["updated_at"],
-                "can_manage": can_manage_wall_work(conn, row, int(user["id"])),
-                **wall_work_link_payload(row),
-            }
-            for row in rows
-        ]
+        if not rows:
+            return []
+
+        work_ids = [int(row["id"]) for row in rows]
+        placeholders = ", ".join("?" for _ in work_ids)
+        like_rows = conn.execute(
+            f"""
+            SELECT
+                wall_work_likes.work_id,
+                COUNT(CASE WHEN COALESCE(users.role, 'student') = 'student' THEN 1 END) AS student_like_count,
+                COUNT(CASE WHEN users.role = 'teacher' THEN 1 END) AS teacher_like_count,
+                MAX(CASE WHEN wall_work_likes.user_id = ? THEN 1 ELSE 0 END) AS liked_by_me
+            FROM wall_work_likes
+            JOIN users ON users.id = wall_work_likes.user_id
+            WHERE wall_work_likes.work_id IN ({placeholders})
+            GROUP BY wall_work_likes.work_id
+            """,
+            [user["id"], *work_ids],
+        ).fetchall()
+        likes_by_work = {int(row["work_id"]): row for row in like_rows}
+
+        mark_rows = conn.execute(
+            f"SELECT work_id, marked_at FROM wall_work_teacher_link_marks WHERE work_id IN ({placeholders})",
+            work_ids,
+        ).fetchall()
+        marks_by_work = {int(row["work_id"]): row for row in mark_rows}
+
+        comment_rows = conn.execute(
+            f"""
+            SELECT *
+            FROM wall_work_comments
+            WHERE work_id IN ({placeholders})
+            ORDER BY created_at ASC, id ASC
+            """,
+            work_ids,
+        ).fetchall()
+        comments_by_work: dict[int, list[dict[str, Any]]] = {}
+        for comment in comment_rows:
+            comments_by_work.setdefault(int(comment["work_id"]), []).append(
+                teacher_comment_payload(comment, int(user["id"]))
+            )
+
+        payloads = []
+        for row in rows:
+            work_id = int(row["id"])
+            like = likes_by_work.get(work_id)
+            mark = marks_by_work.get(work_id)
+            payloads.append(
+                {
+                    "id": work_id,
+                    "work_id": work_id,
+                    "title": row["title"],
+                    "card_type": "group" if row["group_id"] else "individual",
+                    "group_id": row["group_id"],
+                    "group_name": row["group_name"],
+                    "group_members": [item for item in (row["group_members_text"] or "").split("、") if item],
+                    "author_name": row["author_name"],
+                    "student_name": row["author_name"],
+                    "student_id": row["student_id"],
+                    "user_student_id": row["student_id"],
+                    "class_name": row["group_class_name"] or row["user_class_name"],
+                    "cover_url": row["cover_url"],
+                    "item_number": "AI漫剧",
+                    "student_like_count": int(like["student_like_count"] or 0) if like else 0,
+                    "teacher_like_count": int(like["teacher_like_count"] or 0) if like else 0,
+                    "liked_by_me": bool(like["liked_by_me"]) if like else False,
+                    "teacher_link_status": "expired" if mark else "unknown",
+                    "teacher_link_marked_at": mark["marked_at"] if mark else None,
+                    "comments": comments_by_work.get(work_id, []),
+                    "can_write_teacher_feedback": is_teacher(user),
+                    "created_at": row["created_at"],
+                    "updated_at": row["updated_at"],
+                    "can_manage": can_manage_wall_work(conn, row, int(user["id"])),
+                    **wall_work_link_payload(row),
+                }
+            )
+        return payloads
 
 
 def validate_upload(file: UploadFile) -> str:

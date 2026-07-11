@@ -107,6 +107,12 @@ export const wallWorks = {
     return uploadForm(`/api/manju/wall-works/${id}`, form, 'PUT')
   },
   delete: (id) => request(`/api/manju/wall-works/${id}`, { method: 'DELETE' }),
+  like: (id) => request(`/api/manju/wall-works/${id}/like`, { method: 'PUT' }),
+  unlike: (id) => request(`/api/manju/wall-works/${id}/like`, { method: 'DELETE' }),
+  createComment: (id, content) => request(`/api/manju/wall-works/${id}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
+  updateComment: (id, content) => request(`/api/manju/wall-comments/${id}`, { method: 'PUT', body: JSON.stringify({ content }) }),
+  deleteComment: (id) => request(`/api/manju/wall-comments/${id}`, { method: 'DELETE' }),
+  setLinkStatus: (id, expired) => request(`/api/manju/wall-works/${id}/link-status`, { method: 'PUT', body: JSON.stringify({ expired }) }),
 }
 
 export const groups = {
