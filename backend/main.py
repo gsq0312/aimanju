@@ -313,6 +313,10 @@ class GroupCreateRequest(BaseModel):
     name: str
 
 
+class GroupLeaderTransferRequest(BaseModel):
+    user_id: int
+
+
 class ManjuProjectCreate(BaseModel):
     title: str
     manju_data: dict[str, Any] = Field(default_factory=dict)
@@ -419,6 +423,10 @@ def group_has_projects(conn: sqlite3.Connection, group_id: int) -> bool:
 
 def group_payload(conn: sqlite3.Connection, row: sqlite3.Row, current_user_id: Optional[int] = None) -> dict[str, Any]:
     members = group_members(conn, int(row["id"]))
+    can_transfer_leader = bool(
+        current_user_id is not None
+        and is_group_leader(conn, int(row["id"]), int(current_user_id))
+    )
     return {
         "id": row["id"],
         "class_name": row["class_name"],
@@ -428,6 +436,7 @@ def group_payload(conn: sqlite3.Connection, row: sqlite3.Row, current_user_id: O
         "is_locked": bool(row["is_locked"]),
         "members": members,
         "has_work": group_has_projects(conn, int(row["id"])),
+        "can_transfer_leader": can_transfer_leader,
         "can_join": (
             not bool(row["is_locked"])
             and len(members) < int(row["max_members"] or DEFAULT_MAX_GROUP_MEMBERS)
@@ -642,6 +651,43 @@ def join_group(group_id: int, user: sqlite3.Row = Depends(get_current_user)) -> 
         conn.execute(
             "INSERT INTO student_group_members (group_id, user_id, role, joined_at) VALUES (?, ?, 'member', ?)",
             (group_id, user["id"], now_iso()),
+        )
+        updated = conn.execute("SELECT * FROM student_groups WHERE id = ?", (group_id,)).fetchone()
+        return group_payload(conn, updated, int(user["id"]))
+
+
+@app.post("/api/manju/groups/{group_id}/transfer-leader")
+def transfer_group_leader(
+    group_id: int,
+    data: GroupLeaderTransferRequest,
+    user: sqlite3.Row = Depends(get_current_user),
+) -> dict[str, Any]:
+    with db_conn() as conn:
+        group = conn.execute("SELECT * FROM student_groups WHERE id = ?", (group_id,)).fetchone()
+        if not group:
+            raise HTTPException(status_code=404, detail="小组不存在")
+
+        current_membership = group_membership_row(conn, group_id, int(user["id"]))
+        if not current_membership or current_membership["role"] != "leader":
+            raise HTTPException(status_code=403, detail="只有当前组长可以转交组长身份")
+        if int(data.user_id) == int(user["id"]):
+            raise HTTPException(status_code=400, detail="你已经是当前组长")
+
+        target_membership = group_membership_row(conn, group_id, data.user_id)
+        if not target_membership:
+            raise HTTPException(status_code=400, detail="只能转交给本组成员")
+
+        conn.execute(
+            "UPDATE student_group_members SET role = 'member' WHERE id = ?",
+            (current_membership["id"],),
+        )
+        conn.execute(
+            "UPDATE student_group_members SET role = 'leader' WHERE id = ?",
+            (target_membership["id"],),
+        )
+        conn.execute(
+            "UPDATE student_groups SET updated_at = ? WHERE id = ?",
+            (now_iso(), group_id),
         )
         updated = conn.execute("SELECT * FROM student_groups WHERE id = ?", (group_id,)).fetchone()
         return group_payload(conn, updated, int(user["id"]))

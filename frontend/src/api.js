@@ -113,6 +113,7 @@ export const groups = {
   status: () => request('/api/manju/groups/status'),
   create: (data) => request('/api/manju/groups', { method: 'POST', body: JSON.stringify(data) }),
   join: (groupId) => request(`/api/manju/groups/${groupId}/join`, { method: 'POST' }),
+  transferLeader: (groupId, userId) => request(`/api/manju/groups/${groupId}/transfer-leader`, { method: 'POST', body: JSON.stringify({ user_id: userId }) }),
   leave: () => request('/api/manju/groups/leave', { method: 'POST' }),
 }
 

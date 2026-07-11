@@ -97,6 +97,22 @@ export default function ManjuGroupWidget({ onChanged }) {
     }
   }
 
+  const handleTransferLeader = async (member) => {
+    if (!myGroup) return
+    if (!window.confirm(`确认将组长转交给“${member.name}”吗？转交后，对方可以管理小组最终稿和上墙作品。`)) return
+    setWorkingId(`transfer-leader-${member.user_id}`)
+    setMessage({ type: '', text: '' })
+    try {
+      await groupsApi.transferLeader(myGroup.id, member.user_id)
+      setMessage({ type: 'success', text: `已将组长转交给 ${member.name}` })
+      await refresh()
+    } catch (error) {
+      setMessage({ type: 'error', text: error.message || '转交失败' })
+    } finally {
+      setWorkingId('')
+    }
+  }
+
   const myGroup = status?.my_group
   const groups = status?.groups || []
 
@@ -117,7 +133,19 @@ export default function ManjuGroupWidget({ onChanged }) {
           <div className="manju-group-current-main">
             <div className="manju-group-members">
               {myGroup.members.map((member) => (
-                <span key={member.user_id}>{member.name}{member.role === 'leader' ? ' · 组长' : ''}</span>
+                <div key={member.user_id} className="manju-group-member">
+                  <span>{member.name}{member.role === 'leader' ? ' · 组长' : ''}</span>
+                  {myGroup.can_transfer_leader && member.role !== 'leader' && (
+                    <button
+                      type="button"
+                      className="manju-group-transfer"
+                      onClick={() => handleTransferLeader(member)}
+                      disabled={workingId === `transfer-leader-${member.user_id}`}
+                    >
+                      {workingId === `transfer-leader-${member.user_id}` ? '转交中...' : '转交组长'}
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
             <p>
